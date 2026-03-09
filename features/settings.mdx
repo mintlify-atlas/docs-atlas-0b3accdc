@@ -1,0 +1,194 @@
+---
+title: 'Settings'
+description: 'Customize your CicloVital experience with theme options and account management'
+---
+
+## Overview
+
+The Settings page allows you to personalize your CicloVital experience by choosing from multiple theme options and managing your account. Access settings through the application header or menu.
+
+**Route:** `/settings`
+
+## Accessing Settings
+
+<Steps>
+  <Step title="Navigate to Settings">
+    Click the **Settings** link in the application header or menu
+  </Step>
+  <Step title="Choose your preferences">
+    Select your preferred theme and manage your account options
+  </Step>
+  <Step title="Changes save automatically">
+    Theme selections are saved immediately and persist across sessions
+  </Step>
+</Steps>
+
+## Theme Customization
+
+CicloVital offers five distinct themes to match your mood and preferences:
+
+### Available Themes
+
+<CardGroup cols={2}>
+  <Card title="Dark" icon="moon">
+    Classic dark mode for comfortable viewing in low-light environments
+  </Card>
+  <Card title="Ocean" icon="water">
+    Calming blue and teal tones inspired by the ocean
+  </Card>
+  <Card title="Sunset" icon="sun">
+    Warm oranges and purples reminiscent of sunset
+  </Card>
+  <Card title="Berry" icon="apple-whole">
+    Rich berry tones with purple and pink accents
+  </Card>
+  <Card title="Forest" icon="tree">
+    Natural green tones inspired by forest landscapes
+  </Card>
+</CardGroup>
+
+### How Themes Work
+
+1. **Instant application** - Theme changes apply immediately across the entire app
+2. **Persistent storage** - Your theme choice is saved in browser localStorage
+3. **Consistent styling** - All pages, components, and features adapt to your chosen theme
+4. **Accessibility** - Each theme maintains proper contrast ratios for readability
+
+### Switching Themes
+
+```javascript
+// Themes are managed by ThemeContext
+const themes = [
+  'theme-dark',
+  'theme-ocean',
+  'theme-sunset',
+  'theme-berry',
+  'theme-forest'
+];
+```
+
+The active theme is applied to the document body as a CSS class, enabling theme-specific styling throughout the application.
+
+## Account Management
+
+### Sign Out
+
+The Settings page provides a secure sign-out option:
+
+<Steps>
+  <Step title="Locate Sign Out button">
+    Find the **Cerrar sesión** (Sign Out) button in the User Settings section
+  </Step>
+  <Step title="Click to sign out">
+    Click the button with the logout icon to end your session
+  </Step>
+  <Step title="Redirected to home">
+    You'll be safely logged out and redirected to the home page
+  </Step>
+</Steps>
+
+<Note>
+  The Sign Out button is only enabled when you're logged in. If you're not authenticated, the button appears disabled.
+</Note>
+
+## User Interface
+
+The Settings page is organized into clear sections:
+
+### Theme Settings Section
+
+- **Title:** "Ajustes de Tema" (Theme Settings)
+- **Layout:** Horizontal button group with all theme options
+- **Active state:** Currently selected theme is highlighted
+- **Disabled state:** Active theme button is disabled to prevent redundant clicks
+
+### User Settings Section
+
+- **Title:** "Ajustes de Usuario" (User Settings)
+- **Sign Out button:** Large, prominent button with logout icon
+- **Disabled when logged out:** Prevents errors if no user session exists
+
+### Visual Elements
+
+- **CicloVital logo:** Displayed at the bottom of the settings page
+- **Clean spacing:** Generous padding for comfortable reading and interaction
+- **Responsive design:** Adapts to different screen sizes and orientations
+
+## Technical Implementation
+
+Settings integrates with several contexts and hooks:
+
+```javascript src/pages/Settings/Settings.jsx:14-16
+const { user } = useContext(UserContext);
+const { logout } = useAuth();
+const { theme, setTheme } = useContext(ThemeContext);
+```
+
+### Theme Persistence
+
+Themes are stored using the `useLocalStorage` hook:
+
+```javascript
+// In ThemeContext
+const [theme, setTheme] = useLocalStorage('theme', 'theme-dark');
+```
+
+### Theme Application
+
+When you change themes, the new theme class is applied to the document:
+
+```javascript
+document.body.className = theme;
+```
+
+## Best Practices
+
+<Tip>
+  **Try different themes** - Experiment with themes at different times of day to find what works best for your eyes and mood.
+</Tip>
+
+<Tip>
+  **Sign out on shared devices** - Always sign out when using CicloVital on public or shared computers to protect your privacy.
+</Tip>
+
+## Troubleshooting
+
+<Accordion title="Theme not changing">
+  If theme selection doesn't work:
+  - Refresh the page
+  - Clear your browser cache
+  - Check that JavaScript is enabled
+  - Ensure localStorage is not disabled in your browser
+</Accordion>
+
+<Accordion title="Sign out button disabled">
+  The sign out button is disabled when:
+  - You're not logged in
+  - Your session has expired
+  
+  **Solution:** Navigate to the login page to authenticate again.
+</Accordion>
+
+<Accordion title="Theme not persisting">
+  If your theme resets after closing the browser:
+  - Check browser privacy settings
+  - Ensure cookies and localStorage are allowed
+  - Verify you're not in private/incognito mode
+</Accordion>
+
+## Related Features
+
+<CardGroup cols={2}>
+  <Card title="Theme Context" icon="palette" href="/api/contexts/theme-context">
+    Learn how themes are managed at the code level
+  </Card>
+  <Card title="Authentication" icon="lock" href="/getting-started/authentication">
+    Understand user authentication and sessions
+  </Card>
+  <Card title="useAuth Hook" icon="code" href="/api/hooks/use-auth">
+    Technical details of the logout function
+  </Card>
+  <Card title="useLocalStorage" icon="database" href="/api/hooks/use-local-storage">
+    Learn about persistent storage
+  </Card>
+</CardGroup>

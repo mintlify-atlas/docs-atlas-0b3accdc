@@ -1,0 +1,246 @@
+---
+title: 'useLocalStorage'
+description: 'React hook for synchronized localStorage state management'
+---
+
+## Overview
+
+The `useLocalStorage` hook provides a React state hook that automatically synchronizes with browser localStorage. It handles JSON serialization, cross-tab synchronization, and error handling for localStorage operations.
+
+**Source:** `src/hooks/useLocalStorage.js`
+
+## Hook Signature
+
+```javascript
+export function useLocalStorage(key, initialValue)
+```
+
+<ParamField path="key" type="string" required>
+  The localStorage key to store the value under
+</ParamField>
+
+<ParamField path="initialValue" type="any" required>
+  The default value if no stored value exists
+</ParamField>
+
+## Return Value
+
+Returns a tuple similar to `useState`:
+
+```javascript
+const [value, setValue] = useLocalStorage(key, initialValue);
+```
+
+- **value**: The current value (read from localStorage on mount)
+- **setValue**: Function to update the value (automatically saves to localStorage)
+
+## Features
+
+- **Automatic persistence** - Values are automatically saved to localStorage on change
+- **Cross-tab synchronization** - Changes in one tab are reflected in other tabs
+- **JSON serialization** - Automatically handles JSON stringify/parse
+- **Error handling** - Gracefully handles localStorage quota errors and private browsing mode
+- **SSR safe** - Checks for window availability before accessing localStorage
+
+## Usage Examples
+
+### Basic Usage
+
+```javascript
+import { useLocalStorage } from './hooks/useLocalStorage';
+
+function UserPreferences() {
+  const [theme, setTheme] = useLocalStorage('theme', 'light');
+
+  return (
+    <button onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}>
+      Current theme: {theme}
+    </button>
+  );
+}
+```
+
+### User Context Implementation
+
+```javascript src/contexts/UserProvider.jsx
+import { useLocalStorage } from '../hooks/useLocalStorage';
+
+export default function UserProvider({ children }) {
+  const [user, setUser] = useLocalStorage('user', null);
+
+  return (
+    <UserContext.Provider value={{ user, setUser }}>
+      {children}
+    </UserContext.Provider>
+  );
+}
+```
+
+### Chat Context Implementation
+
+```javascript src/contexts/ChatProvider.jsx
+import { useLocalStorage } from '../hooks/useLocalStorage';
+
+export default function ChatProvider({ children }) {
+  const [currentChat, setCurrentChat] = useLocalStorage('chat', null);
+
+  return (
+    <ChatContext.Provider value={{ currentChat, setCurrentChat }}>
+      {children}
+    </ChatContext.Provider>
+  );
+}
+```
+
+### Complex Objects
+
+```javascript
+function UserSettings() {
+  const [settings, setSettings] = useLocalStorage('settings', {
+    notifications: true,
+    theme: 'dark',
+    language: 'es'
+  });
+
+  const updateSetting = (key, value) => {
+    setSettings(prev => ({
+      ...prev,
+      [key]: value
+    }));
+  };
+
+  return (
+    <div>
+      <label>
+        <input 
+          type="checkbox" 
+          checked={settings.notifications}
+          onChange={(e) => updateSetting('notifications', e.target.checked)}
+        />
+        Enable notifications
+      </label>
+    </div>
+  );
+}
+```
+
+## Implementation Details
+
+### Initial Value from localStorage
+
+On first render, the hook attempts to read from localStorage:
+
+```javascript src/hooks/useLocalStorage.js:5-13
+const [value, setValue] = useState(() => {
+  if (typeof window === 'undefined') return initialValue
+  try {
+    const raw = window.localStorage.getItem(key)
+    return raw ? JSON.parse(raw) : initialValue
+  } catch {
+    return initialValue
+  }
+})
+```
+
+### Automatic Persistence
+
+Changes are automatically saved to localStorage:
+
+```javascript src/hooks/useLocalStorage.js:15-19
+useEffect(() => {
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value))
+  } catch { /* quota exceeded or private mode */ }
+}, [key, value])
+```
+
+### Cross-Tab Synchronization
+
+Listens for storage events from other tabs:
+
+```javascript src/hooks/useLocalStorage.js:21-29
+useEffect(() => {
+  const onStorage = (e) => {
+    if (e.key === key) {
+      setValue(e.newValue ? JSON.parse(e.newValue) : initialValue)
+    }
+  }
+  window.addEventListener('storage', onStorage)
+  return () => window.removeEventListener('storage', onStorage)
+}, [key, initialValue])
+```
+
+## Error Handling
+
+The hook gracefully handles common localStorage errors:
+
+- **Quota exceeded** - Silently fails when storage limit is reached
+- **Private browsing** - Falls back to memory-only state
+- **Parse errors** - Returns initial value if stored data is corrupted
+- **SSR** - Returns initial value when window is undefined
+
+## Best Practices
+
+<Accordion title="Use unique keys">
+  Use descriptive, unique keys to avoid collisions:
+  ```javascript
+  // Good
+  useLocalStorage('ciclovital_user', null)
+  
+  // Avoid
+  useLocalStorage('user', null)
+  ```
+</Accordion>
+
+<Accordion title="Keep stored data small">
+  localStorage has a 5-10MB limit. Avoid storing large objects:
+  ```javascript
+  // Good - store only essential user data
+  useLocalStorage('user', { id, email, name })
+  
+  // Avoid - don't store large datasets
+  useLocalStorage('all_messages', largeMessageArray)
+  ```
+</Accordion>
+
+<Accordion title="Provide sensible defaults">
+  Always provide a default value that makes sense:
+  ```javascript
+  const [theme, setTheme] = useLocalStorage('theme', 'theme-dark');
+  const [user, setUser] = useLocalStorage('user', null);
+  const [settings, setSettings] = useLocalStorage('settings', {});
+  ```
+</Accordion>
+
+## Security Considerations
+
+<Warning>
+  Do not store sensitive information like passwords or tokens in localStorage. It is accessible to any JavaScript code on the page and is not encrypted.
+</Warning>
+
+```javascript
+// ❌ NEVER store sensitive data
+useLocalStorage('password', '');
+useLocalStorage('authToken', '');
+
+// ✅ Only store non-sensitive user preferences
+useLocalStorage('theme', 'dark');
+useLocalStorage('language', 'es');
+```
+
+## Related Documentation
+
+<CardGroup cols={2}>
+  <Card title="User Context" icon="user" href="/api/contexts/user-context">
+    Uses useLocalStorage for persistence
+  </Card>
+  <Card title="Chat Context" icon="comments" href="/api/contexts/chat-context">
+    Uses useLocalStorage for persistence
+  </Card>
+  <Card title="Theme Context" icon="palette" href="/api/contexts/theme-context">
+    Uses useLocalStorage for theme persistence
+  </Card>
+  <Card title="Settings Feature" icon="gear" href="/features/settings">
+    User guide for application settings
+  </Card>
+</CardGroup>

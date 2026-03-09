@@ -49,7 +49,8 @@
               "features/ai-chatbot",
               "features/daily-records",
               "features/calendar",
-              "features/statistics"
+              "features/statistics",
+              "features/settings"
             ]
           },
           {
@@ -88,7 +89,9 @@
               "api/hooks/use-auth",
               "api/hooks/use-chat",
               "api/hooks/use-daily-record",
-              "api/hooks/use-stats"
+              "api/hooks/use-stats",
+              "api/hooks/use-message",
+              "api/hooks/use-local-storage"
             ]
           },
           {

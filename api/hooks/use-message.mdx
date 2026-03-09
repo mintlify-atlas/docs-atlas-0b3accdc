@@ -1,0 +1,193 @@
+---
+title: 'useMessage'
+description: 'React hook for managing chat messages and AI interactions'
+---
+
+## Overview
+
+The `useMessage` hook provides functionality for retrieving chat messages and sending messages to the AI assistant. It wraps the message service functions with React hooks patterns for easy integration into components.
+
+**Source:** `src/hooks/useMessage.js`
+
+## Hook Signature
+
+```javascript
+export const useMessage = () => {
+  // Returns functions for message operations
+}
+```
+
+## Return Value
+
+The hook returns an object with the following functions:
+
+### getChatMessages
+
+Retrieves all messages for a specific chat conversation.
+
+**Signature:**
+```javascript
+const getChatMessages = async (chatId) => Promise<Array | string>
+```
+
+<ParamField path="chatId" type="string" required>
+  The unique identifier of the chat
+</ParamField>
+
+**Returns:** Array of message objects on success, or error message string on failure
+
+### sendMessage
+
+Sends a message to the AI assistant and receives a response.
+
+**Signature:**
+```javascript
+const sendMessage = async (chatId, mensajeUsuario, userId) => Promise<Object | string>
+```
+
+<ParamField path="chatId" type="string" required>
+  The unique identifier of the chat
+</ParamField>
+
+<ParamField path="mensajeUsuario" type="string" required>
+  The user's message text
+</ParamField>
+
+<ParamField path="userId" type="string" required>
+  The unique identifier of the user sending the message
+</ParamField>
+
+**Returns:** Response object with AI message on success, or error message string on failure
+
+## Usage Example
+
+### Basic Usage in Chat Component
+
+```javascript src/pages/Chat/Chat.jsx
+import { useMessage } from '../../hooks/useMessage';
+import { useState, useEffect } from 'react';
+
+function Chat() {
+  const { getChatMessages, sendMessage } = useMessage();
+  const [messages, setMessages] = useState([]);
+  const currentChatId = "chat-123";
+  const userId = "user-456";
+
+  // Load messages when chat opens
+  useEffect(() => {
+    const loadMessages = async () => {
+      const result = await getChatMessages(currentChatId);
+      if (Array.isArray(result)) {
+        setMessages(result);
+      } else {
+        console.error('Error loading messages:', result);
+      }
+    };
+    loadMessages();
+  }, [currentChatId]);
+
+  // Send a message
+  const handleSendMessage = async (messageText) => {
+    const response = await sendMessage(currentChatId, messageText, userId);
+    if (typeof response !== 'string') {
+      // Success - add new message to state
+      setMessages(prev => [...prev, response]);
+    } else {
+      console.error('Error sending message:', response);
+    }
+  };
+
+  return (
+    <div>
+      {/* Render messages */}
+      {messages.map(msg => <div key={msg.id}>{msg.texto}</div>)}
+      {/* Message input */}
+      <input onSubmit={handleSendMessage} />
+    </div>
+  );
+}
+```
+
+### Complete Message Flow
+
+```javascript
+import { useMessage } from '../../hooks/useMessage';
+import { useContext } from 'react';
+import UserContext from '../../contexts/UserContext';
+import ChatContext from '../../contexts/ChatContext';
+
+function MessageHandler() {
+  const { getChatMessages, sendMessage } = useMessage();
+  const { user } = useContext(UserContext);
+  const { currentChat } = useContext(ChatContext);
+
+  const refreshMessages = async () => {
+    const messages = await getChatMessages(currentChat.id);
+    return messages;
+  };
+
+  const sendUserMessage = async (text) => {
+    const response = await sendMessage(
+      currentChat.id,
+      text,
+      user.id
+    );
+    return response;
+  };
+
+  return { refreshMessages, sendUserMessage };
+}
+```
+
+## Implementation Details
+
+The hook uses `useCallback` to memoize the functions, preventing unnecessary re-renders:
+
+```javascript src/hooks/useMessage.js:4-18
+const getChatMessages = useCallback(async (chatId) => {
+  const messages = await getMessagesByChatID(chatId);
+  return messages.ok ? messages.data : messages.messageError;
+}, []);
+
+const sendMessage = useCallback(async (chatId, mensajeUsuario, userId) => {
+  const response = await sendMessageToIA(chatId, mensajeUsuario, userId);
+  return response.ok ? response.data : response.messageError;
+}, []);
+```
+
+## Error Handling
+
+Both functions return either data or an error message string. Always check the return type:
+
+```javascript
+const result = await getChatMessages(chatId);
+if (Array.isArray(result)) {
+  // Success - result is message array
+  setMessages(result);
+} else {
+  // Error - result is error message string
+  console.error(result);
+}
+```
+
+## Dependencies
+
+- `getMessagesByChatID` from `/api/message-service`
+- `sendMessageToIA` from `/api/message-service`
+
+## Related Documentation
+
+<CardGroup cols={2}>
+  <Card title="Message Service" icon="server" href="/api/message-service">
+    View the underlying message service API
+  </Card>
+  <Card title="Chat Context" icon="comments" href="/api/contexts/chat-context">
+    Learn about chat state management
+  </Card>
+  <Card title="AI Chatbot Feature" icon="robot" href="/features/ai-chatbot">
+    User guide for the AI chatbot
+  </Card>
+  <Card title="useChat Hook" icon="code" href="/api/hooks/use-chat">
+    Manage chat conversations
+  </Card>
+</CardGroup>
