@@ -1,0 +1,294 @@
+---
+title: Features
+description: Explore CicloVital's comprehensive features for mental health and wellness tracking
+---
+
+# CicloVital Features
+
+CicloVital provides a complete suite of tools to help you track, understand, and improve your mental wellness. Each feature is designed to work together, creating a comprehensive system for emotional wellbeing.
+
+## AI-Powered Chatbot
+
+<Card title="Intelligent Emotional Support" icon="robot">
+  Interact with an AI chatbot that provides emotional support through simulated chat sessions.
+</Card>
+
+### Key Capabilities
+
+- **Real-time Messaging**: WebSocket-based communication using STOMP and SockJS for instant responses
+- **Chat Management**: Create, view, and manage multiple chat sessions
+- **Contextual Support**: The AI analyzes your daily records to provide personalized insights
+- **User-Friendly Interface**: Clean, intuitive chat interface built with Ionic React components
+
+### Technical Implementation
+
+```jsx
+// Chat context manages conversations
+import ChatContext from '../../contexts/ChatContext';
+
+const { currentChat } = useContext(ChatContext);
+```
+
+<Note>
+  The chatbot is designed to provide supportive conversations and analyze your wellness patterns. It uses your daily records to offer contextual advice and insights.
+</Note>
+
+## Daily Habit Tracking
+
+<Card title="Comprehensive Wellness Metrics" icon="clipboard-check">
+  Track five key wellness indicators every day with an easy-to-use form interface.
+</Card>
+
+### Tracked Metrics
+
+CicloVital tracks the following daily habits:
+
+<CardGroup cols={2}>
+  <Card title="Sleep Hours" icon="bed">
+    Record your sleep duration (0-24 hours) to monitor rest patterns
+  </Card>
+  
+  <Card title="Exercise" icon="dumbbell">
+    Track daily exercise in hours (0-6 hours) to maintain fitness awareness
+  </Card>
+  
+  <Card title="Energy Level" icon="bolt">
+    Rate your energy on a scale of 0-10 to identify patterns
+  </Card>
+  
+  <Card title="Mood" icon="smile">
+    Track your emotional state (0-10 scale) throughout your journey
+  </Card>
+</CardGroup>
+
+<CardGroup cols={2}>
+  <Card title="Motivation" icon="fire">
+    Monitor your motivation levels (0-10) to understand drive patterns
+  </Card>
+  
+  <Card title="Comments" icon="comment">
+    Add optional notes to provide context for your daily entries
+  </Card>
+</CardGroup>
+
+### Recording Interface
+
+The daily record modal (`ModalDailyRecord`) provides:
+
+- **Range Sliders**: Interactive sliders for energy, mood, and motivation (0-10 scale)
+- **Numeric Inputs**: Precise entry for sleep hours and exercise duration
+- **Text Area**: Free-form comments to capture additional context
+- **Date Display**: Automatic date stamping for each record
+- **Validation**: Real-time validation ensures data stays within acceptable ranges
+
+```jsx
+// Daily record structure
+const form = {
+  date: today(),
+  horasSueno: 8,        // Sleep hours (0-24)
+  energia: 5,           // Energy level (0-10)
+  estadoAnimo: 5,       // Mood (0-10)
+  motivacion: 5,        // Motivation (0-10)
+  ejercicio: 0,         // Exercise hours (0-6)
+  comentario: ""        // Optional comment
+};
+```
+
+## Interactive Calendar
+
+<Card title="Visual Record Management" icon="calendar">
+  View, manage, and organize all your daily records through an interactive calendar interface powered by FullCalendar.
+</Card>
+
+### Calendar Features
+
+- **Month View**: See all your recorded days at a glance
+- **Event Display**: Each recorded day appears as an event on the calendar
+- **Click to View**: Click any day to view detailed information about that record
+- **Edit & Delete**: Modify or remove records directly from the calendar view
+- **Visual Organization**: Quickly identify patterns and gaps in your tracking
+
+### Record Management
+
+When viewing a record from the calendar, you can:
+
+- **View Details**: See all metrics for the selected day
+- **Edit Record**: Update any values using the same intuitive form
+- **Delete Record**: Remove records you no longer need
+- **Add Comments**: Include or update notes for additional context
+
+```jsx
+// Calendar displays formatted daily records
+const eventosFormateados = registros.map(reg => ({
+  id: reg.id,
+  title: 'Registro Diarios',
+  date: reg.date,
+  extendedProps: {
+    horasSueno, ejercicio, energia, 
+    estadoAnimo, motivacion, comentario
+  }
+}));
+```
+
+## Statistics Dashboard
+
+<Card title="Comprehensive Analytics" icon="chart-line">
+  Visualize your wellness data through interactive charts and key performance indicators.
+</Card>
+
+### Dashboard Components
+
+#### 1. Date Range Selection
+
+- **Flexible Filtering**: Choose custom start and end dates for analysis
+- **Date Validation**: Ensures start date is before end date
+- **Default Period**: Initially shows the last 7 days of data
+
+#### 2. Key Performance Indicators (KPIs)
+
+The dashboard displays average values for:
+
+<CardGroup cols={3}>
+  <Card title="Average Mood">
+    Mean emotional state across the selected period
+  </Card>
+  <Card title="Average Energy">
+    Overall energy level trends
+  </Card>
+  <Card title="Consistency">
+    Number of days with records in the period
+  </Card>
+</CardGroup>
+
+<CardGroup cols={2}>
+  <Card title="Average Exercise">
+    Mean daily exercise hours
+  </Card>
+  <Card title="Additional Metrics">
+    Sleep and motivation averages
+  </Card>
+</CardGroup>
+
+#### 3. Mood Line Chart
+
+- **Trend Visualization**: See how your mood changes over time
+- **Interactive**: Powered by Recharts for smooth, responsive charts
+- **Time Series**: X-axis shows dates, Y-axis shows mood values
+
+#### 4. Habits Radar Chart
+
+- **Multi-Dimensional View**: Visualize all habits simultaneously
+- **Pattern Recognition**: Identify which areas are strong or need attention
+- **Balanced Overview**: See how different wellness metrics relate to each other
+
+#### 5. AI-Generated Insights
+
+- **Summary Card**: Receive AI-generated summaries of your wellness patterns
+- **Contextual Analysis**: Insights based on your specific data for the selected period
+- **Actionable Recommendations**: Get suggestions for improvement
+
+```jsx
+// Statistics response structure
+const statsResponse = {
+  kpis: {
+    promedioAnimo: 0.0,
+    promedioEnergia: 0.0,
+    promedioEjercicio: 0.0,
+    promedioSueno: 0.0,
+    promedioMotivacion: 0.0,
+    diasConstantes: 0
+  },
+  moodTrend: [],
+  summary: "AI-generated insights..."
+};
+```
+
+## User Authentication
+
+<Card title="Secure Access Management" icon="lock">
+  Robust authentication system to protect your personal wellness data.
+</Card>
+
+### Authentication Features
+
+- **User Registration**: Create accounts with email and password
+- **Secure Login**: Password-protected access to your data
+- **Session Management**: Persistent sessions using local storage
+- **Auto-Login**: Automatic login after successful registration
+- **Logout**: Secure session termination
+
+### User Context
+
+The application uses React Context (`UserContext`) to manage authentication state throughout the app:
+
+```jsx
+// User authentication hook
+const { user, setUser } = useContext(UserContext);
+const { registerUser, login, logout } = useAuth();
+```
+
+## Mobile App Support
+
+<Card title="Native Mobile Experience" icon="mobile-screen">
+  Full mobile app capabilities through Capacitor integration.
+</Card>
+
+### Mobile Features
+
+- **Cross-Platform**: Deploy to Android devices as a native app
+- **Ionic Framework**: Native-feeling UI components optimized for mobile
+- **Responsive Design**: Adapts seamlessly to different screen sizes
+- **Touch Optimized**: Gestures and interactions designed for mobile use
+
+### Configuration
+
+```json
+{
+  "appId": "com.ciclovital.app",
+  "appName": "CicloVital",
+  "webDir": "dist",
+  "bundledWebRuntime": false
+}
+```
+
+<Note>
+  CicloVital uses Capacitor 7.4+ to bridge web technologies with native mobile capabilities, ensuring a smooth user experience on both web and mobile platforms.
+</Note>
+
+## Additional Features
+
+### Theme Support
+
+CicloVital includes a theme system (`ThemeContext`) that allows for customization of the application's appearance.
+
+### Side Menu Navigation
+
+- **Quick Access**: Side menu with easy navigation to all features
+- **Chat History**: View and manage all your chat sessions
+- **Settings**: Access user settings and preferences
+
+### Form Validation
+
+- **Real-time Validation**: Instant feedback on form inputs
+- **Range Enforcement**: Ensures all values stay within valid ranges
+- **Error Messages**: Clear, helpful error messages when validation fails
+
+### Local Storage Integration
+
+- **Persistent Data**: User preferences and session data stored locally
+- **Fast Loading**: Quick access to frequently used data
+- **Offline Capability**: Core features work even without network connectivity
+
+## Feature Integration
+
+All CicloVital features work together seamlessly:
+
+1. **Track** your daily habits using the recording form
+2. **View** your records in the interactive calendar
+3. **Analyze** your data through the statistics dashboard
+4. **Discuss** your patterns with the AI chatbot
+5. **Improve** based on insights and recommendations
+
+<Card title="Holistic Wellness Approach" icon="heart">
+  CicloVital's integrated features create a complete ecosystem for mental health tracking and improvement. Each feature enhances the others, providing a comprehensive view of your emotional wellbeing.
+</Card>

@@ -1,0 +1,158 @@
+---
+title: 'Auth Service'
+description: 'User authentication and registration service'
+---
+
+## Overview
+
+The Auth Service handles user authentication and registration functionality for the CicloVital application. It provides methods for creating new user accounts and logging in existing users.
+
+## API Configuration
+
+The service uses environment-based API URL configuration:
+
+```javascript
+const isProd = import.meta.env.VITE_PROD === 'true';
+const API_URL = isProd 
+  ? import.meta.env.VITE_URL_API_USER 
+  : import.meta.env.VITE_URL_API_LOCAL_USER;
+```
+
+## Functions
+
+### createUser
+
+Creates a new user account in the system.
+
+```javascript
+export const createUser = async (userData) => {
+  // Implementation
+}
+```
+
+<ParamField path="userData" type="object" required>
+  User registration data containing user information
+  
+  **Structure:**
+  - All required user fields for registration
+  - Validated by backend API
+</ParamField>
+
+<ResponseField name="response" type="object">
+  Response object with operation status
+  
+  **Success Response:**
+  ```javascript
+  {
+    ok: true,
+    data: response.data // User data from server
+  }
+  ```
+  
+  **Error Response:**
+  ```javascript
+  {
+    ok: false,
+    messageError: string // Error message from server or default error
+  }
+  ```
+</ResponseField>
+
+**HTTP Method:** `POST`  
+**Endpoint:** `{API_URL}`
+
+#### Example Usage
+
+```javascript
+import { createUser } from '@/services/authService';
+
+const newUser = {
+  username: 'johndoe',
+  email: 'john@example.com',
+  password: 'securePassword123'
+};
+
+const result = await createUser(newUser);
+
+if (result.ok) {
+  console.log('User created:', result.data);
+} else {
+  console.error('Error:', result.messageError);
+}
+```
+
+---
+
+### loginUser
+
+Authenticates a user and establishes a session.
+
+```javascript
+export const loginUser = async (userData) => {
+  // Implementation
+}
+```
+
+<ParamField path="userData" type="object" required>
+  User login credentials
+  
+  **Structure:**
+  - Authentication credentials (username/email and password)
+  - Validated by backend API
+</ParamField>
+
+<ResponseField name="response" type="object">
+  Response object with authentication status
+  
+  **Success Response:**
+  ```javascript
+  {
+    ok: true,
+    data: response.data // Authentication token and user data
+  }
+  ```
+  
+  **Error Response:**
+  ```javascript
+  {
+    ok: false,
+    messageError: string // Error message from server or default error
+  }
+  ```
+</ResponseField>
+
+**HTTP Method:** `POST`  
+**Endpoint:** `{API_URL}/login`
+
+#### Example Usage
+
+```javascript
+import { loginUser } from '@/services/authService';
+
+const credentials = {
+  email: 'john@example.com',
+  password: 'securePassword123'
+};
+
+const result = await loginUser(credentials);
+
+if (result.ok) {
+  console.log('Login successful:', result.data);
+  // Store token and user data
+  localStorage.setItem('token', result.data.token);
+} else {
+  console.error('Login failed:', result.messageError);
+}
+```
+
+## Error Handling
+
+All service methods use a consistent error handling pattern:
+
+- **Server Errors:** Returns `error.response?.data` if available
+- **Connection Errors:** Returns default message: `'Error al conectar con el servidor.'`
+- **Response Format:** Always returns `{ ok: boolean, data/messageError }`
+
+## Source Code
+
+Location: `src/services/authService.js`

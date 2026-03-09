@@ -1,0 +1,343 @@
+---
+title: 'Android Setup'
+description: 'Build and run the CicloVital Android app'
+---
+
+## Prerequisites
+
+Before building the Android app, ensure you have the following installed:
+
+- **Node.js** (v16 or higher)
+- **Android Studio** (latest stable version)
+- **Java Development Kit (JDK)** 17 or higher
+- **Android SDK** with the following components:
+  - Android SDK Platform 35 (API Level 35)
+  - Android SDK Build-Tools
+  - Android SDK Command-line Tools
+
+## Environment Setup
+
+<Steps>
+  <Step title="Install Android Studio">
+    Download and install [Android Studio](https://developer.android.com/studio) from the official website.
+  </Step>
+
+  <Step title="Configure Android SDK">
+    Open Android Studio and navigate to **Settings > Appearance & Behavior > System Settings > Android SDK**.
+    
+    Install the following:
+    - Android SDK Platform 35 (compileSdk version)
+    - Android SDK Build-Tools 35.0.0 or higher
+  </Step>
+
+  <Step title="Set Environment Variables">
+    Add the following to your shell profile (`~/.bashrc`, `~/.zshrc`, etc.):
+    
+    ```bash
+    export ANDROID_HOME=$HOME/Android/Sdk
+    export PATH=$PATH:$ANDROID_HOME/emulator
+    export PATH=$PATH:$ANDROID_HOME/platform-tools
+    export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin
+    ```
+    
+    Reload your shell configuration:
+    ```bash
+    source ~/.bashrc  # or ~/.zshrc
+    ```
+  </Step>
+</Steps>
+
+## Project Configuration
+
+The Android app is configured with the following specifications:
+
+| Property | Value |
+|----------|-------|
+| **Application ID** | `com.ciclovital.app` |
+| **Namespace** | `com.ciclovital.app` |
+| **Min SDK Version** | 23 (Android 6.0) |
+| **Target SDK Version** | 35 (Android 15) |
+| **Compile SDK Version** | 35 |
+| **Version Code** | 1 |
+| **Version Name** | 1.0 |
+
+### Gradle Configuration
+
+The project uses the following key dependencies:
+
+```gradle android/variables.gradle
+minSdkVersion = 23
+compileSdkVersion = 35
+targetSdkVersion = 35
+androidxAppCompatVersion = '1.7.0'
+androidxCoreVersion = '1.15.0'
+coreSplashScreenVersion = '1.0.1'
+```
+
+## Building the Android App
+
+<Steps>
+  <Step title="Install Dependencies">
+    First, install all Node.js dependencies:
+    
+    ```bash
+    npm install
+    ```
+  </Step>
+
+  <Step title="Build the Web Assets">
+    Build the React application that will be bundled into the Android app:
+    
+    ```bash
+    npm run build
+    ```
+    
+    This creates optimized production files in the `dist` directory, which Capacitor will use as the web runtime.
+  </Step>
+
+  <Step title="Sync Capacitor">
+    Copy the web assets to the Android platform and update native dependencies:
+    
+    ```bash
+    npx cap sync android
+    ```
+    
+    This command:
+    - Copies the built web app from `dist` to `android/app/src/main/assets/public`
+    - Updates Capacitor plugins
+    - Syncs configuration from `capacitor.config.json`
+  </Step>
+
+  <Step title="Open in Android Studio">
+    Open the Android project in Android Studio:
+    
+    ```bash
+    npx cap open android
+    ```
+    
+    Alternatively, open the `android` directory directly in Android Studio.
+  </Step>
+
+  <Step title="Build and Run">
+    In Android Studio:
+    
+    1. Wait for Gradle sync to complete
+    2. Select a device or emulator from the device dropdown
+    3. Click the **Run** button (green play icon) or press `Shift + F10`
+    
+    Or build from the command line:
+    
+    ```bash
+    cd android
+    ./gradlew assembleDebug
+    ```
+    
+    The APK will be generated at: `android/app/build/outputs/apk/debug/app-debug.apk`
+  </Step>
+</Steps>
+
+## Running on a Device
+
+### Using an Emulator
+
+<Steps>
+  <Step title="Create an AVD">
+    In Android Studio, open **Device Manager** and create a new Android Virtual Device (AVD).
+    
+    Recommended configuration:
+    - Device: Pixel 6 or similar
+    - System Image: Android 15 (API 35) or Android 13 (API 33)
+    - RAM: 2048 MB or higher
+  </Step>
+
+  <Step title="Launch the Emulator">
+    Start the emulator from Device Manager, then run:
+    
+    ```bash
+    npx cap run android
+    ```
+  </Step>
+</Steps>
+
+### Using a Physical Device
+
+<Steps>
+  <Step title="Enable Developer Options">
+    On your Android device:
+    
+    1. Go to **Settings > About Phone**
+    2. Tap **Build Number** 7 times to enable Developer Options
+    3. Go back to **Settings > System > Developer Options**
+    4. Enable **USB Debugging**
+  </Step>
+
+  <Step title="Connect and Verify">
+    Connect your device via USB and verify it's recognized:
+    
+    ```bash
+    adb devices
+    ```
+    
+    You should see your device listed. Accept the USB debugging prompt on your device.
+  </Step>
+
+  <Step title="Run the App">
+    Deploy to your connected device:
+    
+    ```bash
+    npx cap run android
+    ```
+  </Step>
+</Steps>
+
+## Development Workflow
+
+For faster development iterations with live reload:
+
+<Steps>
+  <Step title="Start the Dev Server">
+    Run the Vite development server:
+    
+    ```bash
+    npm run dev
+    ```
+    
+    The server will start on `http://localhost:5173` (or another port if 5173 is busy).
+  </Step>
+
+  <Step title="Update Capacitor Config">
+    Temporarily modify `capacitor.config.json` to point to your dev server:
+    
+    ```json
+    {
+      "appId": "com.ciclovital.app",
+      "appName": "CicloVital",
+      "webDir": "dist",
+      "bundledWebRuntime": false,
+      "server": {
+        "url": "http://YOUR_LOCAL_IP:5173",
+        "cleartext": true
+      }
+    }
+    ```
+    
+    Replace `YOUR_LOCAL_IP` with your machine's local IP address (e.g., `192.168.1.100`).
+  </Step>
+
+  <Step title="Rebuild and Run">
+    ```bash
+    npx cap copy android
+    npx cap run android
+    ```
+    
+    The app will now load content from your dev server with hot reload support.
+  </Step>
+</Steps>
+
+<Warning>
+  Remember to remove the `server` configuration from `capacitor.config.json` before building for production.
+</Warning>
+
+## Building for Release
+
+<Steps>
+  <Step title="Generate a Signing Key">
+    Create a keystore for signing your release APK:
+    
+    ```bash
+    keytool -genkey -v -keystore ciclovital-release.keystore \
+      -alias ciclovital -keyalg RSA -keysize 2048 -validity 10000
+    ```
+    
+    Store the keystore file and password securely.
+  </Step>
+
+  <Step title="Configure Signing">
+    Create `android/app/signing.properties`:
+    
+    ```properties
+    storeFile=/path/to/ciclovital-release.keystore
+    storePassword=YOUR_STORE_PASSWORD
+    keyAlias=ciclovital
+    keyPassword=YOUR_KEY_PASSWORD
+    ```
+    
+    Add signing configuration to `android/app/build.gradle`:
+    
+    ```gradle
+    android {
+        signingConfigs {
+            release {
+                def props = new Properties()
+                file("signing.properties").withInputStream { props.load(it) }
+                storeFile file(props['storeFile'])
+                storePassword props['storePassword']
+                keyAlias props['keyAlias']
+                keyPassword props['keyPassword']
+            }
+        }
+        buildTypes {
+            release {
+                signingConfig signingConfigs.release
+                minifyEnabled false
+                proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            }
+        }
+    }
+    ```
+  </Step>
+
+  <Step title="Build Release APK">
+    ```bash
+    npm run build
+    npx cap sync android
+    cd android
+    ./gradlew assembleRelease
+    ```
+    
+    The signed APK will be at: `android/app/build/outputs/apk/release/app-release.apk`
+  </Step>
+</Steps>
+
+## Troubleshooting
+
+### Gradle Build Failures
+
+If Gradle fails to build:
+
+```bash
+cd android
+./gradlew clean
+./gradlew assembleDebug --stacktrace
+```
+
+### SDK Version Mismatches
+
+Ensure you have Android SDK 35 installed. Check in Android Studio:
+**Settings > Appearance & Behavior > System Settings > Android SDK**
+
+### ADB Device Not Found
+
+If `adb devices` doesn't show your device:
+
+```bash
+adb kill-server
+adb start-server
+adb devices
+```
+
+### Port Already in Use
+
+If the dev server port is busy:
+
+```bash
+npm run dev -- --port 3000
+```
+
+Then update the `server.url` in `capacitor.config.json` accordingly.
+
+## Next Steps
+
+<Card title="Capacitor Configuration" icon="gear" href="/mobile/capacitor-configuration">
+  Learn about Capacitor plugins and configuration
+</Card>

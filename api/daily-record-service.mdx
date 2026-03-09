@@ -1,0 +1,280 @@
+---
+title: 'Daily Record Service'
+description: 'Daily health and wellness record management service'
+---
+
+## Overview
+
+The Daily Record Service manages daily health and wellness records for users in the CicloVital application. It provides complete CRUD operations for tracking user daily activities, symptoms, and health metrics.
+
+## API Configuration
+
+The service uses environment-based API URL configuration:
+
+```javascript
+const isProd = import.meta.env.VITE_PROD === 'true';
+const API_URL = isProd 
+  ? import.meta.env.VITE_URL_API_DAILY_RECORD 
+  : import.meta.env.VITE_URL_API_LOCAL_DAILY_RECORD;
+```
+
+## Functions
+
+### getDailyRecordsByUserID
+
+Retrieves all daily records for a specific user.
+
+```javascript
+export const getDailyRecordsByUserID = async (userId) => {
+  // Implementation
+}
+```
+
+<ParamField path="userId" type="string" required>
+  The unique identifier of the user whose daily records to retrieve
+</ParamField>
+
+<ResponseField name="response" type="object">
+  Response object with daily records data
+  
+  **Success Response:**
+  ```javascript
+  {
+    ok: true,
+    data: response.data // Array of daily record objects
+  }
+  ```
+  
+  **Error Response:**
+  ```javascript
+  {
+    ok: false,
+    messageError: string // Error message from server or default error
+  }
+  ```
+</ResponseField>
+
+**HTTP Method:** `GET`  
+**Endpoint:** `{API_URL}/usuario/{userId}`
+
+#### Example Usage
+
+```javascript
+import { getDailyRecordsByUserID } from '@/services/dailyRecordService';
+
+const userId = 'user123';
+const result = await getDailyRecordsByUserID(userId);
+
+if (result.ok) {
+  console.log('Daily records:', result.data);
+  result.data.forEach(record => {
+    console.log(`Date: ${record.date}, Mood: ${record.mood}`);
+  });
+} else {
+  console.error('Error fetching records:', result.messageError);
+}
+```
+
+---
+
+### createDailyRecordService
+
+Creates a new daily record entry.
+
+```javascript
+export const createDailyRecordService = async (recordData) => {
+  // Implementation
+}
+```
+
+<ParamField path="recordData" type="object" required>
+  Daily record data to create
+  
+  **Structure:**
+  - User ID
+  - Date of the record
+  - Health metrics (mood, symptoms, activities, etc.)
+  - Any additional tracking data
+</ParamField>
+
+<ResponseField name="response" type="object">
+  Response object with created record data
+  
+  **Success Response:**
+  ```javascript
+  {
+    ok: true,
+    data: response.data // Created record object with ID
+  }
+  ```
+  
+  **Error Response:**
+  ```javascript
+  {
+    ok: false,
+    messageError: string // Error message from server or default error
+  }
+  ```
+</ResponseField>
+
+**HTTP Method:** `POST`  
+**Endpoint:** `{API_URL}`
+
+#### Example Usage
+
+```javascript
+import { createDailyRecordService } from '@/services/dailyRecordService';
+
+const newRecord = {
+  userId: 'user123',
+  date: '2026-03-09',
+  mood: 'good',
+  symptoms: ['fatigue'],
+  activities: ['exercise', 'meditation'],
+  notes: 'Feeling energetic today'
+};
+
+const result = await createDailyRecordService(newRecord);
+
+if (result.ok) {
+  console.log('Record created:', result.data);
+  const recordId = result.data.id;
+} else {
+  console.error('Error creating record:', result.messageError);
+}
+```
+
+---
+
+### deleteDailyRecordService
+
+Deletes a specific daily record.
+
+```javascript
+export const deleteDailyRecordService = async (recordId) => {
+  // Implementation
+}
+```
+
+<ParamField path="recordId" type="string" required>
+  The unique identifier of the daily record to delete
+</ParamField>
+
+<ResponseField name="response" type="object">
+  Response object with deletion status
+  
+  **Success Response:**
+  ```javascript
+  {
+    ok: true,
+    data: response.data // Confirmation message
+  }
+  ```
+  
+  **Error Response:**
+  ```javascript
+  {
+    ok: false,
+    messageError: string // Error message from server or default error
+  }
+  ```
+</ResponseField>
+
+**HTTP Method:** `DELETE`  
+**Endpoint:** `{API_URL}/eliminar/{recordId}`
+
+#### Example Usage
+
+```javascript
+import { deleteDailyRecordService } from '@/services/dailyRecordService';
+
+const recordId = 'record789';
+const result = await deleteDailyRecordService(recordId);
+
+if (result.ok) {
+  console.log('Record deleted successfully:', result.data);
+} else {
+  console.error('Error deleting record:', result.messageError);
+}
+```
+
+---
+
+### updateDailyRecordService
+
+Updates an existing daily record.
+
+```javascript
+export const updateDailyRecordService = async (recordId, recordData) => {
+  // Implementation
+}
+```
+
+<ParamField path="recordId" type="string" required>
+  The unique identifier of the daily record to update
+</ParamField>
+
+<ParamField path="recordData" type="object" required>
+  Updated daily record data
+  
+  **Structure:**
+  - Fields to update (mood, symptoms, activities, notes, etc.)
+  - Only includes fields that need to be changed
+</ParamField>
+
+<ResponseField name="response" type="object">
+  Response object with updated record data
+  
+  **Success Response:**
+  ```javascript
+  {
+    ok: true,
+    data: response.data // Updated record object
+  }
+  ```
+  
+  **Error Response:**
+  ```javascript
+  {
+    ok: false,
+    messageError: string // Error message from server or default error
+  }
+  ```
+</ResponseField>
+
+**HTTP Method:** `PUT`  
+**Endpoint:** `{API_URL}/actualizar/{recordId}`
+
+#### Example Usage
+
+```javascript
+import { updateDailyRecordService } from '@/services/dailyRecordService';
+
+const recordId = 'record789';
+const updatedData = {
+  mood: 'excellent',
+  symptoms: [],
+  notes: 'Updated: Feeling much better after rest'
+};
+
+const result = await updateDailyRecordService(recordId, updatedData);
+
+if (result.ok) {
+  console.log('Record updated:', result.data);
+} else {
+  console.error('Error updating record:', result.messageError);
+}
+```
+
+## Error Handling
+
+All service methods use a consistent error handling pattern:
+
+- **Server Errors:** Returns `error.response?.data` if available
+- **Connection Errors:** Returns default message: `'Error al conectar con el servidor.'`
+- **Response Format:** Always returns `{ ok: boolean, data/messageError }`
+- **Debug Logging:** Errors are logged to console for debugging
+
+## Source Code
+
+Location: `src/services/dailyRecordService.js`

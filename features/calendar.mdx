@@ -1,0 +1,263 @@
+---
+title: Calendar
+description: Visualize your daily records in a calendar view to see patterns and track your wellness journey over time.
+---
+
+The Calendar feature provides a visual, month-by-month view of all your daily records. It's your central hub for reviewing past entries, identifying patterns, and managing your wellness tracking history.
+
+## Overview
+
+The calendar displays:
+
+- **Monthly view**: See an entire month of your wellness journey at a glance
+- **Daily record indicators**: Each day with a record is highlighted
+- **Quick access**: Click any record to view full details
+- **Record management**: Edit or delete records directly from the calendar
+
+<Info>
+The calendar uses FullCalendar, a powerful calendar library that provides smooth navigation and an intuitive interface.
+</Info>
+
+## Opening the Calendar
+
+<Steps>
+  <Step title="Access from Side Menu">
+    Open the side menu and select the Calendar option. The calendar modal will appear overlaying your current view.
+  </Step>
+  
+  <Step title="Calendar Loads">
+    The calendar automatically loads all your daily records and displays them in a month grid view.
+  </Step>
+</Steps>
+
+## Navigating the Calendar
+
+### Monthly View
+
+The default view shows:
+
+- **Current month**: The calendar opens to the current month
+- **Navigation arrows**: Move backward and forward through months
+- **Today button**: Jump back to the current date
+- **Day cells**: Each day shows whether you have a record
+
+### Daily Records Display
+
+Days with records show:
+- **"Registro Diarios" label**: Indicates a daily record exists for that day
+- **Clickable**: Each record can be clicked to view details
+- **Visual indicator**: Easily spot which days you've tracked
+
+<Tip>
+Use the calendar to quickly identify gaps in your tracking. If you see several days without records, you might want to try to remember and backfill that data (if possible) or make note of periods when you weren't tracking.
+</Tip>
+
+## Viewing Record Details
+
+<Steps>
+  <Step title="Click on a Record">
+    Click on any "Registro Diarios" entry in the calendar. A detailed view modal appears over the calendar.
+  </Step>
+  
+  <Step title="Review the Information">
+    The detail view shows all the data for that day:
+    - Sleep hours (Sueño)
+    - Exercise hours (Ejercicio)
+    - Energy level (Energía)
+    - Mood score (Ánimo)
+    - Motivation level (Motivación)
+    - Comments (if you added any)
+  </Step>
+  
+  <Step title="Take Action">
+    From the detail view, you can:
+    - **Edit**: Click the pencil icon to modify the record
+    - **Delete**: Click the trash icon to remove the record
+    - **Close**: Click the X icon to return to calendar view
+  </Step>
+</Steps>
+
+## Editing Records from Calendar
+
+The calendar provides the quickest way to edit past records:
+
+1. **Click the record** in the calendar to open details
+2. **Click the pencil icon** in the detail view
+3. **The daily record modal opens** with all fields pre-filled with existing data
+4. **Modify any fields** you want to change
+5. **Click "Guardar registro"** to save your updates
+6. **See confirmation** that the record was updated
+7. **Calendar refreshes** automatically to show the updated record
+
+<Note>
+When editing, all the same validation rules apply as when creating a new record. Values must be within the valid ranges.
+</Note>
+
+## Deleting Records from Calendar
+
+To remove a record:
+
+1. **Click the record** in the calendar
+2. **Click the trash icon** (red button)
+3. **The record is immediately deleted** from your history
+4. **The calendar updates** to remove the record from that day
+
+<Note>
+Deletion is permanent and cannot be undone. The record will also be removed from your statistics calculations.
+</Note>
+
+## Understanding the Calendar Interface
+
+### Header Section
+
+- **Title**: "Calendario de registros" (Record Calendar)
+- **Close button**: X icon to exit the calendar and return to the main view
+- **Toolbar**: Contains month navigation and view controls
+
+### Calendar Grid
+
+- **Week rows**: Shows full weeks, including days from previous/next months
+- **Day cells**: Each day is clearly separated
+- **Event entries**: Your daily records appear as labeled entries in their respective days
+- **Height optimization**: Calendar is sized to fit comfortably in the modal (90% of available height)
+
+### Detail Modal
+
+When viewing a record:
+
+- **Overlay design**: Appears on top of the calendar
+- **Card layout**: Information presented in a clean, organized card
+- **Action buttons**: Edit, delete, and close buttons clearly visible at the top
+- **Structured data**: Each metric clearly labeled with its value
+
+## Calendar Features
+
+### Automatic Updates
+
+The calendar intelligently manages your data:
+
+- **Auto-load**: Fetches all your records when opened
+- **User-scoped**: Only shows records belonging to your user account
+- **Date formatting**: Automatically formats dates for proper display
+- **Sorted display**: Records appear chronologically
+
+### Event Properties
+
+Each calendar event contains:
+
+- **Unique ID**: Ensures proper tracking and interaction
+- **Date**: The day the record represents
+- **Extended properties**: All wellness metrics stored for quick access
+- **Title**: Standard "Registro Diarios" label for consistency
+
+<Info>
+The calendar uses extended properties to store all your wellness data without cluttering the visual display. This allows for a clean interface while maintaining quick access to details.
+</Info>
+
+## Using Calendar for Pattern Recognition
+
+### Weekly Patterns
+
+Look for:
+- **Consistency**: Are you tracking regularly throughout the week?
+- **Gaps**: Which days do you tend to skip?
+- **Streaks**: How many consecutive days have you tracked?
+
+### Monthly Overview
+
+Observe:
+- **Tracking habits**: Are some weeks better than others?
+- **Seasonal changes**: Do certain times of month show different patterns?
+- **Progress**: How has your tracking consistency improved over time?
+
+<Tip>
+If you notice you consistently skip weekends or specific days, set a reminder to track on those days. Consistent data across all days provides the most valuable insights.
+</Tip>
+
+## Best Practices
+
+<Steps>
+  <Step title="Review Weekly">
+    Open the calendar at least once a week to review your tracking consistency and spot any gaps.
+  </Step>
+  
+  <Step title="Backfill Thoughtfully">
+    If you missed a day and remember your state clearly, edit or create that record. But don't guess—accurate data is more valuable than complete data.
+  </Step>
+  
+  <Step title="Use with Statistics">
+    Combine calendar review with statistics dashboard viewing for a complete picture of your wellness trends.
+  </Step>
+  
+  <Step title="Note Special Days">
+    When viewing records for particularly good or challenging days, take note of what made them special. This helps identify what works for your wellness.
+  </Step>
+</Steps>
+
+## Calendar Navigation Tips
+
+### Moving Through Time
+
+- **Previous month**: Click the left arrow in the calendar toolbar
+- **Next month**: Click the right arrow in the calendar toolbar
+- **Today**: Click the "Today" button to jump to current month
+- **Specific month**: Click the month/year title to access a date picker (if available)
+
+### Efficient Record Access
+
+- **Recent records**: Current month is shown by default, so recent records are immediately visible
+- **Historical data**: Navigate backwards to review your wellness journey
+- **Future planning**: While you can't create future records, you can see upcoming days
+
+## Integration with Other Features
+
+### Daily Records
+
+The calendar is the primary interface for:
+- Viewing daily records you've created
+- Editing past entries
+- Deleting incorrect or duplicate records
+- Checking tracking consistency
+
+### Statistics
+
+Calendar data feeds into:
+- Statistics dashboard calculations
+- Trend analysis and charts
+- AI-generated insights and summaries
+
+<Info>
+The calendar shows you *when* you tracked, while the statistics dashboard shows you *what* you tracked. Together, they provide complete visibility into your wellness journey.
+</Info>
+
+## Troubleshooting
+
+### Records Not Showing
+
+If records don't appear in the calendar:
+- Verify you're logged in as the correct user
+- Check that records were successfully saved (look for confirmation messages)
+- Try closing and reopening the calendar
+- Refresh your browser if the issue persists
+
+### Calendar Won't Load
+
+If the calendar doesn't open:
+- Check your internet connection
+- Ensure your browser is up to date
+- Try logging out and back in
+- Clear browser cache if problems continue
+
+### Can't Click Records
+
+If clicking on records doesn't show details:
+- Make sure you're clicking directly on the "Registro Diarios" text
+- Try clicking in a different part of the record entry
+- Close and reopen the calendar modal
+
+### Detail Modal Stuck
+
+If the detail view won't close:
+- Click the X button in the top-right corner
+- Click outside the modal (on the dark overlay)
+- Refresh the page if needed

@@ -1,0 +1,256 @@
+---
+title: ThemeContext
+description: Manages application theme with automatic DOM updates and localStorage persistence
+---
+
+## Overview
+
+The `ThemeContext` provides centralized theme management for the CicloVital application. It automatically applies theme classes to the document body and persists user preferences to localStorage.
+
+## Context Shape
+
+```typescript
+interface ThemeContextValue {
+  theme: string;
+  setTheme: (theme: string) => void;
+}
+```
+
+### Properties
+
+<ParamField path="theme" type="string">
+  The current theme identifier. Defaults to `"theme-dark"`.
+  
+  Common values:
+  - `"theme-dark"` - Dark theme
+  - `"theme-light"` - Light theme
+</ParamField>
+
+<ParamField path="setTheme" type="function">
+  Function to update the current theme.
+  
+  ```typescript
+  (theme: string) => void
+  ```
+</ParamField>
+
+## Provider Component
+
+### ThemeProvider
+
+Wraps your application to provide theme context to all child components.
+
+```jsx
+import { ThemeProvider } from './contexts/ThemeProvider';
+
+function App() {
+  return (
+    <ThemeProvider>
+      {/* Your app components */}
+    </ThemeProvider>
+  );
+}
+```
+
+### Features
+
+- **Automatic DOM Updates**: Theme class is automatically applied to `document.body`
+- **Persistence**: Theme preference is saved to localStorage
+- **Session Recovery**: Loads theme preference from localStorage on initialization
+- **Safe Storage**: Includes error handling for localStorage operations
+- **Default Theme**: Falls back to `"theme-dark"` if no preference exists
+
+## Usage
+
+### Consuming the Context
+
+```jsx
+import { useContext } from 'react';
+import ThemeContext from './contexts/ThemeContext';
+
+function ThemeDisplay() {
+  const { theme } = useContext(ThemeContext);
+
+  return <p>Current theme: {theme}</p>;
+}
+```
+
+### Theme Toggle
+
+```jsx
+function ThemeToggle() {
+  const { theme, setTheme } = useContext(ThemeContext);
+
+  const toggleTheme = () => {
+    const newTheme = theme === 'theme-dark' ? 'theme-light' : 'theme-dark';
+    setTheme(newTheme);
+  };
+
+  return (
+    <button onClick={toggleTheme}>
+      Switch to {theme === 'theme-dark' ? 'Light' : 'Dark'} Mode
+    </button>
+  );
+}
+```
+
+### Theme Selector
+
+```jsx
+function ThemeSelector() {
+  const { theme, setTheme } = useContext(ThemeContext);
+
+  const themes = [
+    { id: 'theme-dark', name: 'Dark' },
+    { id: 'theme-light', name: 'Light' },
+    { id: 'theme-blue', name: 'Blue' },
+    { id: 'theme-green', name: 'Green' },
+  ];
+
+  return (
+    <select value={theme} onChange={(e) => setTheme(e.target.value)}>
+      {themes.map(t => (
+        <option key={t.id} value={t.id}>
+          {t.name}
+        </option>
+      ))}
+    </select>
+  );
+}
+```
+
+### Conditional Styling
+
+```jsx
+function Header() {
+  const { theme } = useContext(ThemeContext);
+
+  return (
+    <header className={`header ${theme}`}>
+      <h1>CicloVital</h1>
+      {theme === 'theme-dark' && <span>🌙</span>}
+      {theme === 'theme-light' && <span>☀️</span>}
+    </header>
+  );
+}
+```
+
+## Implementation Details
+
+### Source Files
+
+- `src/contexts/ThemeContext.js` - Context definition
+- `src/contexts/ThemeProvider.jsx` - Provider implementation
+
+### localStorage Key
+
+The context stores theme preference under the key `"theme"` in localStorage.
+
+### DOM Integration
+
+The provider automatically applies the theme as a class name to `document.body`:
+
+```javascript
+useEffect(() => {
+  document.body.className = theme;
+}, [theme]);
+```
+
+This allows CSS to target the theme:
+
+```css
+body.theme-dark {
+  background-color: #1a1a1a;
+  color: #ffffff;
+}
+
+body.theme-light {
+  background-color: #ffffff;
+  color: #000000;
+}
+```
+
+### Initial State
+
+On mount, the provider attempts to load the theme from localStorage. If no preference exists or parsing fails, it defaults to `"theme-dark"`.
+
+```javascript
+const [theme, setTheme] = useState(() => safeGet("theme", "theme-dark"));
+```
+
+## CSS Integration
+
+### Theme-specific Styles
+
+```css
+/* Dark theme */
+body.theme-dark {
+  --bg-primary: #1a1a1a;
+  --text-primary: #ffffff;
+  --accent: #4a9eff;
+}
+
+/* Light theme */
+body.theme-light {
+  --bg-primary: #ffffff;
+  --text-primary: #000000;
+  --accent: #0066cc;
+}
+
+/* Use CSS variables in components */
+.card {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+```
+
+## Best Practices
+
+<Tip>
+Use CSS custom properties (variables) with theme classes for maintainable, scalable theming.
+</Tip>
+
+<Note>
+The theme class replaces the entire `document.body.className`. If you need to preserve other classes, modify the implementation to append rather than replace.
+</Note>
+
+## Advanced Usage
+
+### Prefers Color Scheme
+
+Respect user's system preference:
+
+```jsx
+import { useContext, useEffect } from 'react';
+import ThemeContext from './contexts/ThemeContext';
+
+function App() {
+  const { theme, setTheme } = useContext(ThemeContext);
+
+  useEffect(() => {
+    // Only set on first load if no preference exists
+    const storedTheme = localStorage.getItem('theme');
+    if (!storedTheme) {
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      setTheme(prefersDark ? 'theme-dark' : 'theme-light');
+    }
+  }, []);
+
+  return <div>{/* Your app */}</div>;
+}
+```
+
+### Theme Transitions
+
+Add smooth transitions when theme changes:
+
+```css
+body {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+```
+
+## Related
+
+- [UserContext](/api/contexts/user-context) - Manages user authentication
+- [ChatContext](/api/contexts/chat-context) - Manages chat state

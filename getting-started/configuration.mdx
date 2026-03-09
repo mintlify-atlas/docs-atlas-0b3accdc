@@ -1,0 +1,483 @@
+---
+title: 'Configuration'
+description: 'Environment variables, API endpoints, and build configuration for CicloVital'
+---
+
+## Overview
+
+CicloVital's configuration system is built on Vite's environment variable system and provides flexible settings for development and production environments.
+
+## Environment Variables
+
+CicloVital uses Vite's `import.meta.env` for environment variable access. All public environment variables must be prefixed with `VITE_`.
+
+### Required Variables
+
+Create a `.env` file in your project root:
+
+```bash .env
+# Environment mode
+VITE_PROD=false
+
+# Development API endpoint
+VITE_URL_API_LOCAL_USER=http://localhost:8080/api/users
+
+# Production API endpoint
+VITE_URL_API_USER=https://api.ciclovital.com/api/users
+```
+
+### Variable Reference
+
+<ParamField path="VITE_PROD" type="string" required>
+  Environment mode flag. Set to `'true'` for production, `'false'` for development.
+  
+  Used by authService to determine which API endpoint to use (src/services/authService.js:3).
+</ParamField>
+
+<ParamField path="VITE_URL_API_LOCAL_USER" type="string" required>
+  Local development API endpoint for user authentication services.
+  
+  Default: `http://localhost:8080/api/users`
+</ParamField>
+
+<ParamField path="VITE_URL_API_USER" type="string" required>
+  Production API endpoint for user authentication services.
+  
+  Example: `https://api.ciclovital.com/api/users`
+</ParamField>
+
+### Environment-Specific Files
+
+Vite supports multiple environment files:
+
+```bash
+.env                # Loaded in all cases
+.env.local          # Loaded in all cases, ignored by git
+.env.development    # Loaded in development mode
+.env.production     # Loaded in production mode
+```
+
+<Warning>
+  Never commit `.env.local` or any file containing sensitive credentials to version control.
+</Warning>
+
+## API Configuration
+
+The API configuration is centralized in service modules and automatically adapts based on environment variables.
+
+### Authentication Service Configuration
+
+```javascript src/services/authService.js:3-5
+const isProd = import.meta.env.VITE_PROD === 'true';
+
+const API_URL = isProd 
+  ? `${import.meta.env.VITE_URL_API_USER}` 
+  : `${import.meta.env.VITE_URL_API_LOCAL_USER}`;
+```
+
+**How it works:**
+
+<Steps>
+  <Step title="Check Environment">
+    Evaluates `VITE_PROD` to determine the current environment.
+    
+    ```javascript
+    const isProd = import.meta.env.VITE_PROD === 'true';
+    // Returns true only if explicitly set to 'true' string
+    ```
+  </Step>
+
+  <Step title="Select API Endpoint">
+    Chooses the appropriate API URL based on environment.
+    
+    ```javascript
+    // Development: http://localhost:8080/api/users
+    // Production: https://api.ciclovital.com/api/users
+    ```
+  </Step>
+
+  <Step title="Make API Calls">
+    All service methods use the configured API_URL.
+    
+    ```javascript
+    // Registration endpoint
+    axios.post(API_URL, userData)
+    
+    // Login endpoint
+    axios.post(API_URL + '/login', userData)
+    ```
+  </Step>
+</Steps>
+
+### API Endpoints
+
+**User Service Endpoints:**
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/users` | Create new user account |
+| POST | `/api/users/login` | Authenticate user credentials |
+
+<Info>
+  The base URL is configured via environment variables and automatically prefixed to all endpoints.
+</Info>
+
+### Extending API Configuration
+
+To add new service configurations, follow the same pattern:
+
+```javascript src/services/exampleService.js
+const isProd = import.meta.env.VITE_PROD === 'true';
+
+const API_URL = isProd 
+  ? import.meta.env.VITE_URL_API_PROD_EXAMPLE
+  : import.meta.env.VITE_URL_API_LOCAL_EXAMPLE;
+
+export const getExample = async () => {
+  try {
+    const response = await axios.get(API_URL + '/endpoint');
+    return { ok: true, data: response.data };
+  } catch(error) {
+    return { ok: false, messageError: error.response?.data };
+  }
+}
+```
+
+Then add to your `.env`:
+
+```bash .env
+VITE_URL_API_LOCAL_EXAMPLE=http://localhost:8080/api/example
+VITE_URL_API_PROD_EXAMPLE=https://api.ciclovital.com/api/example
+```
+
+## Vite Configuration
+
+The Vite configuration provides build settings and development server options.
+
+### Configuration File
+
+```javascript vite.config.js
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+
+export default defineConfig({
+  plugins: [react()],
+  define: { global: {} },
+  server: {
+    host: '0.0.0.0',
+  },
+})
+```
+
+### Configuration Options
+
+<ParamField path="plugins" type="array">
+  Vite plugins to enable during build and development.
+  
+  ```javascript
+  plugins: [react()]
+  ```
+  
+  Uses `@vitejs/plugin-react` for Fast Refresh and JSX transformation.
+</ParamField>
+
+<ParamField path="define" type="object">
+  Global constant replacements during build.
+  
+  ```javascript
+  define: { global: {} }
+  ```
+  
+  Defines `global` as an empty object for Node.js package compatibility.
+</ParamField>
+
+<ParamField path="server.host" type="string">
+  Development server host binding.
+  
+  ```javascript
+  server: { host: '0.0.0.0' }
+  ```
+  
+  Binds to all network interfaces, allowing access from other devices on your network.
+</ParamField>
+
+### Development Server
+
+When you run `npm run dev`, Vite starts a development server with:
+
+- **Hot Module Replacement (HMR)** - Instant updates without full page reload
+- **Fast Refresh** - Preserves React component state during updates
+- **Network Access** - Accessible from other devices via your local IP
+- **HTTPS Support** - Can be enabled with additional configuration
+
+**Default URLs:**
+```
+Local:   http://localhost:5173/
+Network: http://192.168.1.x:5173/
+```
+
+### Build Configuration
+
+For production builds:
+
+```bash
+npm run build
+```
+
+Vite will:
+1. Bundle all source code using Rollup
+2. Optimize assets and dependencies
+3. Tree-shake unused code
+4. Minify JavaScript and CSS
+5. Output to `dist/` directory
+
+**Build Output:**
+```
+dist/
+├── assets/
+│   ├── index-[hash].js
+│   └── index-[hash].css
+├── index.html
+└── ...
+```
+
+### Preview Production Build
+
+Test the production build locally:
+
+```bash
+npm run preview
+```
+
+This serves the `dist/` folder at `http://localhost:4173/`.
+
+## Additional Configuration
+
+### Capacitor Configuration (Mobile)
+
+CicloVital includes Capacitor for mobile deployment:
+
+```json package.json
+{
+  "dependencies": {
+    "@capacitor/android": "^7.4.2",
+    "@capacitor/cli": "^8.0.1",
+    "@capacitor/core": "^7.4.2"
+  }
+}
+```
+
+To configure Capacitor, create `capacitor.config.json`:
+
+```json capacitor.config.json
+{
+  "appId": "com.ciclovital.app",
+  "appName": "CicloVital",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https"
+  }
+}
+```
+
+### ESLint Configuration
+
+CicloVital uses ESLint for code quality:
+
+```javascript eslint.config.js
+import js from '@eslint/js'
+import globals from 'globals'
+import reactHooks from 'eslint-plugin-react-hooks'
+import reactRefresh from 'eslint-plugin-react-refresh'
+
+export default [
+  js.configs.recommended,
+  {
+    plugins: {
+      'react-hooks': reactHooks,
+      'react-refresh': reactRefresh,
+    },
+    rules: {
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'warn',
+      'react-refresh/only-export-components': [
+        'warn',
+        { allowConstantExport: true },
+      ],
+    },
+  },
+]
+```
+
+Run linting:
+
+```bash
+npm run lint
+```
+
+### Axios Configuration
+
+For advanced Axios configuration, create an instance:
+
+```javascript src/utils/axios.js
+import axios from 'axios';
+
+const isProd = import.meta.env.VITE_PROD === 'true';
+const baseURL = isProd 
+  ? import.meta.env.VITE_URL_API_USER
+  : import.meta.env.VITE_URL_API_LOCAL_USER;
+
+const axiosInstance = axios.create({
+  baseURL,
+  timeout: 10000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Add request interceptor for auth tokens
+axiosInstance.interceptors.request.use(
+  (config) => {
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (user?.token) {
+      config.headers.Authorization = `Bearer ${user.token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// Add response interceptor for error handling
+axiosInstance.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Handle unauthorized access
+      localStorage.removeItem('user');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
+export default axiosInstance;
+```
+
+## Environment Examples
+
+### Development Setup
+
+```bash .env.development
+VITE_PROD=false
+VITE_URL_API_LOCAL_USER=http://localhost:8080/api/users
+VITE_URL_API_USER=http://localhost:8080/api/users
+```
+
+### Production Setup
+
+```bash .env.production
+VITE_PROD=true
+VITE_URL_API_LOCAL_USER=http://localhost:8080/api/users
+VITE_URL_API_USER=https://api.ciclovital.com/api/users
+```
+
+### Staging Setup
+
+```bash .env.staging
+VITE_PROD=true
+VITE_URL_API_LOCAL_USER=http://localhost:8080/api/users
+VITE_URL_API_USER=https://staging-api.ciclovital.com/api/users
+```
+
+## TypeScript Configuration (Optional)
+
+For type-safe environment variables, create `env.d.ts`:
+
+```typescript env.d.ts
+/// <reference types="vite/client" />
+
+interface ImportMetaEnv {
+  readonly VITE_PROD: string
+  readonly VITE_URL_API_LOCAL_USER: string
+  readonly VITE_URL_API_USER: string
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv
+}
+```
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Environment variables not updating">
+    Restart the development server after changing `.env` files:
+    
+    ```bash
+    # Stop the server (Ctrl+C)
+    npm run dev
+    ```
+  </Accordion>
+
+  <Accordion title="API calls failing in production">
+    Verify that:
+    1. `VITE_PROD` is set to `'true'` (string, not boolean)
+    2. Production API URL is correct and accessible
+    3. CORS is properly configured on the backend
+    
+    ```javascript
+    // Debug API URL being used
+    console.log('API URL:', API_URL);
+    console.log('Is Production:', isProd);
+    ```
+  </Accordion>
+
+  <Accordion title="Cannot access dev server from other devices">
+    Ensure `host: '0.0.0.0'` is set in vite.config.js:8 and check your firewall settings.
+    
+    Find your network URL:
+    ```bash
+    # The dev server will display:
+    ➜  Network: http://192.168.1.x:5173/
+    ```
+  </Accordion>
+
+  <Accordion title="Build fails with global is not defined">
+    This is handled by the `define: { global: {} }` configuration. If you still see this error, ensure your vite.config.js is properly formatted.
+  </Accordion>
+</AccordionGroup>
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Use environment files" icon="file-lines">
+    Separate configurations for dev, staging, and production environments
+  </Card>
+  <Card title="Never hardcode URLs" icon="ban">
+    Always use environment variables for API endpoints and external services
+  </Card>
+  <Card title="Validate on startup" icon="check">
+    Check required environment variables exist before initializing services
+  </Card>
+  <Card title="Document all variables" icon="book">
+    Maintain a list of required environment variables with descriptions
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Services API" icon="code" href="/api/auth-service">
+    Explore the complete API documentation for services
+  </Card>
+  <Card title="Hooks API" icon="code" href="/api/hooks/use-auth">
+    Learn about custom React hooks
+  </Card>
+  <Card title="Components Architecture" icon="puzzle-piece" href="/architecture/components">
+    Discover component architecture and patterns
+  </Card>
+  <Card title="Mobile Setup" icon="mobile" href="/mobile/android-setup">
+    Set up the Android mobile application
+  </Card>
+</CardGroup>

@@ -1,0 +1,189 @@
+---
+title: 'useAuth'
+description: 'Custom hook for managing user authentication, registration, and session state'
+---
+
+## Overview
+
+The `useAuth` hook provides a complete authentication system including user registration, login, logout, and alert management. It integrates with React Router for navigation and manages user state through context and localStorage.
+
+## Hook Signature
+
+```javascript
+const {
+  registerUser,
+  login,
+  logout,
+  showAlert,
+  alertMessage,
+  alertHeader,
+  handleAlert
+} = useAuth();
+```
+
+## Return Value
+
+The hook returns an object containing the following properties:
+
+### Functions
+
+#### `registerUser`
+```javascript
+async (data, resetFormCallback) => void
+```
+Registers a new user and automatically logs them in upon success.
+
+**Parameters:**
+- `data` (Object): User registration data
+  - `correo` (string): User email
+  - `password` (string): User password
+  - `confirmPassword` (string): Password confirmation
+  - Additional user fields (nombre, etc.)
+- `resetFormCallback` (Function, optional): Callback to reset the registration form
+
+**Behavior:**
+- Validates password confirmation
+- Creates user account
+- Automatically logs in the new user
+- Saves user data to localStorage
+- Redirects to `/chat` on success
+- Displays alerts for errors or success
+
+#### `login`
+```javascript
+async (logindata, resetFormCallback) => void
+```
+Authenticates an existing user.
+
+**Parameters:**
+- `logindata` (Object): Login credentials
+  - `correo` (string): User email
+  - `password` (string): User password
+- `resetFormCallback` (Function, optional): Callback to reset the login form
+
+**Behavior:**
+- Authenticates user credentials
+- Saves user data to context and localStorage
+- Redirects to `/chat` on success
+- Displays welcome message or error alert
+
+#### `logout`
+```javascript
+() => void
+```
+Logs out the current user.
+
+**Behavior:**
+- Clears user from context
+- Removes user data from localStorage
+- Redirects to `/home`
+
+#### `handleAlert`
+```javascript
+(show, message, header) => void
+```
+Controls the display of alert messages.
+
+**Parameters:**
+- `show` (boolean): Whether to show the alert
+- `message` (string): Alert message content
+- `header` (string): Alert header/title
+
+### State Properties
+
+#### `showAlert`
+```javascript
+boolean
+```
+Indicates whether an alert should be displayed.
+
+#### `alertMessage`
+```javascript
+string
+```
+The message content of the current alert.
+
+#### `alertHeader`
+```javascript
+string
+```
+The header/title of the current alert.
+
+## Usage Example
+
+```javascript
+import { useAuth } from '../hooks/useAuth';
+
+function LoginForm() {
+  const {
+    login,
+    showAlert,
+    alertMessage,
+    alertHeader,
+    handleAlert
+  } = useAuth();
+
+  const handleSubmit = async (formData) => {
+    await login(
+      { correo: formData.email, password: formData.password },
+      () => resetForm()
+    );
+  };
+
+  return (
+    <>
+      <form onSubmit={handleSubmit}>
+        {/* form fields */}
+      </form>
+      {showAlert && (
+        <Alert header={alertHeader} message={alertMessage} />
+      )}
+    </>
+  );
+}
+```
+
+## Registration Example
+
+```javascript
+import { useAuth } from '../hooks/useAuth';
+
+function RegisterForm() {
+  const { registerUser, showAlert, alertMessage, alertHeader } = useAuth();
+
+  const handleRegister = async (formData) => {
+    await registerUser({
+      correo: formData.email,
+      password: formData.password,
+      confirmPassword: formData.confirmPassword,
+      nombre: formData.name
+    });
+  };
+
+  return (
+    <>
+      <form onSubmit={handleRegister}>
+        {/* registration form fields */}
+      </form>
+      {showAlert && (
+        <Alert header={alertHeader} message={alertMessage} />
+      )}
+    </>
+  );
+}
+```
+
+## Dependencies
+
+This hook requires:
+- `UserContext` for managing user state
+- `useLocalStorage` hook for persisting user data
+- `react-router-dom` for navigation
+- `authService` for API calls (`createUser`, `loginUser`)
+
+## Notes
+
+- Password validation is performed client-side before submission
+- User data is persisted in localStorage for session management
+- All authentication functions handle errors gracefully with alert messages
+- Successful operations automatically redirect users to appropriate pages

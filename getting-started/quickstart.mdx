@@ -1,0 +1,155 @@
+---
+title: 'Quickstart'
+description: 'Get started with CicloVital in minutes - from installation to your first wellness tracking session'
+---
+
+## Welcome to CicloVital
+
+CicloVital is a SaaS mental health and wellness tracking platform built with React, Ionic, and Vite. This guide will take you from zero to tracking your first wellness metrics in just a few minutes.
+
+<Steps>
+  <Step title="Install Dependencies">
+    Clone the repository and install the required packages:
+
+    <CodeGroup>
+    ```bash npm
+    npm install
+    ```
+
+    ```bash yarn
+    yarn install
+    ```
+
+    ```bash pnpm
+    pnpm install
+    ```
+    </CodeGroup>
+
+    CicloVital uses the following core technologies:
+    - **React 19.1.0** - UI framework
+    - **Ionic React 8.6.4** - Mobile-first components
+    - **Vite 7.0.4** - Build tool and dev server
+    - **Axios 1.10.0** - HTTP client for API requests
+  </Step>
+
+  <Step title="Configure Environment Variables">
+    Set up your environment configuration. CicloVital requires API endpoints for user authentication and services.
+
+    Create a `.env` file in the root directory:
+
+    ```bash
+    VITE_PROD=false
+    VITE_URL_API_LOCAL_USER=http://localhost:8080/api/users
+    VITE_URL_API_USER=https://your-production-api.com/api/users
+    ```
+
+    <Note>
+      The application uses `VITE_PROD` to determine which API URL to use. Set it to `false` for local development.
+    </Note>
+  </Step>
+
+  <Step title="Start the Development Server">
+    Launch the Vite development server:
+
+    ```bash
+    npm run dev
+    ```
+
+    The application will start on `http://0.0.0.0:5173` (configured in vite.config.js:8).
+
+    You should see output like:
+    ```
+    VITE v7.0.4  ready in 500 ms
+
+    ➜  Local:   http://localhost:5173/
+    ➜  Network: http://0.0.0.0:5173/
+    ```
+  </Step>
+
+  <Step title="Create Your Account">
+    Navigate to the signup page at `/signup` and create your account.
+
+    The registration form requires:
+    - **Name** (1-30 characters)
+    - **Age** (0-120)
+    - **Email** (valid email format, max 254 characters)
+    - **Password** (8-12 characters)
+    - **Confirm Password** (must match)
+
+    <CodeGroup>
+    ```javascript Form Validation
+    // Validation rules from SignUpForm.jsx
+    {
+      nombre: { required: true, minLength: 1, maxLength: 30 },
+      edad: { required: true, min: 0, max: 120 },
+      correo: { 
+        required: true, 
+        pattern: /^[^@]+@[^@]+\.[^@]+$/, 
+        maxLength: 254 
+      },
+      password: { required: true, minLength: 8, maxLength: 12 }
+    }
+    ```
+    </CodeGroup>
+
+    Upon successful registration, you'll be automatically logged in and redirected to `/chat`.
+  </Step>
+
+  <Step title="Log In to Your Account">
+    If you already have an account, navigate to `/login` and sign in with your credentials:
+
+    - **Email** - Your registered email address
+    - **Password** - Your account password (8-12 characters)
+
+    The login process:
+    1. Submits credentials to the authentication API (src/services/authService.js:21)
+    2. Stores user data in localStorage (src/hooks/useAuth.js:77)
+    3. Updates the UserContext (src/contexts/UserContext.js)
+    4. Redirects to `/chat` dashboard (src/hooks/useAuth.js:80)
+  </Step>
+
+  <Step title="Access Your Wellness Dashboard">
+    After logging in, you'll land on the Chat page where you can:
+
+    - **Start conversations** with the AI wellness assistant
+    - **Track daily records** using the side menu modal
+    - **View statistics** at `/statsDashboard` for mood trends and insights
+    - **Access settings** to manage your profile
+
+    The main navigation routes (src/AppContent.jsx:25-31):
+    ```javascript
+    /home          - Landing page
+    /signup        - User registration
+    /login         - User authentication
+    /chat          - Main chat interface
+    /statsDashboard - Analytics and insights
+    /settings      - User preferences
+    ```
+  </Step>
+</Steps>
+
+## What's Next?
+
+<CardGroup cols={2}>
+  <Card title="Authentication" icon="lock" href="/getting-started/authentication">
+    Learn about the authentication system, user flows, and session management
+  </Card>
+  <Card title="Configuration" icon="gear" href="/getting-started/configuration">
+    Explore environment variables, API endpoints, and build configuration
+  </Card>
+  <Card title="Services API" icon="code" href="/api/auth-service">
+    Dive into the API services available in CicloVital
+  </Card>
+  <Card title="Components" icon="puzzle-piece" href="/architecture/components">
+    Discover the component architecture and patterns
+  </Card>
+</CardGroup>
+
+## Need Help?
+
+If you encounter any issues during setup:
+
+- Check that your Node.js version is compatible with Vite 7.x (Node 18+)
+- Verify your API endpoints are accessible
+- Ensure all environment variables are properly configured
+- Review the browser console for any error messages

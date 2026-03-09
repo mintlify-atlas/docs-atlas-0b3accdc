@@ -1,0 +1,553 @@
+---
+title: 'Capacitor Configuration'
+description: 'Configure Capacitor for the CicloVital mobile app'
+---
+
+## Overview
+
+CicloVital uses [Capacitor](https://capacitorjs.com/) to build native mobile applications from the React web app. Capacitor provides a native runtime and bridge that allows web apps to run on iOS and Android while accessing native device features.
+
+## Capacitor Version
+
+The project uses the following Capacitor packages:
+
+```json package.json
+"@capacitor/core": "^7.4.2",
+"@capacitor/cli": "^8.0.1",
+"@capacitor/android": "^7.4.2"
+```
+
+<Note>
+  Capacitor 7 is the latest major version with improved performance, better plugin APIs, and enhanced TypeScript support.
+</Note>
+
+## Configuration File
+
+The main Capacitor configuration is stored in `capacitor.config.json` at the project root:
+
+```json capacitor.config.json
+{
+  "appId": "com.ciclovital.app",
+  "appName": "CicloVital",
+  "webDir": "dist",
+  "bundledWebRuntime": false
+}
+```
+
+### Configuration Properties
+
+| Property | Value | Description |
+|----------|-------|-------------|
+| **appId** | `com.ciclovital.app` | Unique identifier for the app (reverse domain format) |
+| **appName** | `CicloVital` | Display name shown on the device home screen |
+| **webDir** | `dist` | Directory containing built web assets (Vite output) |
+| **bundledWebRuntime** | `false` | Uses system WebView instead of bundling Capacitor runtime |
+
+## Project Structure
+
+After running `npx cap add android`, the project structure includes:
+
+```
+ciclovital/
+├── android/                 # Native Android project
+│   ├── app/
+│   │   ├── src/main/
+│   │   │   ├── assets/     # Web assets copied here
+│   │   │   ├── java/       # Native Java/Kotlin code
+│   │   │   └── AndroidManifest.xml
+│   │   └── build.gradle
+│   ├── build.gradle
+│   └── variables.gradle     # Android SDK versions
+├── src/                     # React source code
+├── dist/                    # Built web assets
+├── capacitor.config.json    # Capacitor configuration
+├── package.json
+└── vite.config.js
+```
+
+## Core Capacitor Workflow
+
+<Steps>
+  <Step title="Build Web Assets">
+    Compile your React app into static files:
+    
+    ```bash
+    npm run build
+    ```
+    
+    This creates optimized files in the `dist` directory using Vite.
+  </Step>
+
+  <Step title="Sync with Native Projects">
+    Copy web assets and update native projects:
+    
+    ```bash
+    npx cap sync
+    ```
+    
+    This command:
+    - Copies `dist` contents to native platform asset directories
+    - Updates native dependencies based on installed plugins
+    - Applies configuration changes from `capacitor.config.json`
+    
+    For a specific platform:
+    ```bash
+    npx cap sync android
+    ```
+  </Step>
+
+  <Step title="Open Native IDE">
+    Open the native project in its respective IDE:
+    
+    ```bash
+    npx cap open android
+    ```
+    
+    This opens Android Studio with the `android` directory.
+  </Step>
+
+  <Step title="Run on Device">
+    Build and run directly on a device or emulator:
+    
+    ```bash
+    npx cap run android
+    ```
+  </Step>
+</Steps>
+
+## Capacitor CLI Commands
+
+### Essential Commands
+
+```bash
+# Initialize Capacitor in an existing project
+npx cap init
+
+# Add a platform (Android or iOS)
+npx cap add android
+npx cap add ios
+
+# Copy web assets only (faster than sync)
+npx cap copy android
+
+# Update Capacitor dependencies
+npx cap update
+
+# List installed plugins
+npx cap ls
+
+# Check Capacitor environment
+npx cap doctor
+```
+
+### Sync vs Copy vs Update
+
+| Command | What It Does |
+|---------|-------------|
+| **sync** | Copy web assets + update native dependencies + apply config |
+| **copy** | Copy web assets only (faster for quick iterations) |
+| **update** | Update Capacitor core and official plugins to latest versions |
+
+## Native Code Integration
+
+The native Android app extends `BridgeActivity` to integrate with Capacitor:
+
+```java android/app/src/main/java/com/ciclovital/app/MainActivity.java
+package com.ciclovital.app;
+
+import com.getcapacitor.BridgeActivity;
+
+public class MainActivity extends BridgeActivity {}
+```
+
+This provides the JavaScript-to-native bridge that powers Capacitor plugins.
+
+## Permissions
+
+The Android app requests the following permissions in `AndroidManifest.xml`:
+
+```xml android/app/src/main/AndroidManifest.xml
+<uses-permission android:name="android.permission.INTERNET" />
+```
+
+<Info>
+  Additional permissions (camera, location, notifications, etc.) are automatically added by Capacitor plugins when installed.
+</Info>
+
+## Installing Capacitor Plugins
+
+Capacitor plugins provide access to native device features. Install plugins as npm packages:
+
+```bash
+# Install a plugin
+npm install @capacitor/camera
+
+# Sync to update native projects
+npx cap sync
+```
+
+### Common Official Plugins
+
+Here are some popular Capacitor plugins you might want to add:
+
+<AccordionGroup>
+  <Accordion title="Camera">
+    Access the device camera and photo library.
+    
+    ```bash
+    npm install @capacitor/camera
+    npx cap sync
+    ```
+    
+    ```typescript
+    import { Camera, CameraResultType } from '@capacitor/camera';
+    
+    const takePicture = async () => {
+      const image = await Camera.getPhoto({
+        quality: 90,
+        allowEditing: false,
+        resultType: CameraResultType.Uri
+      });
+    };
+    ```
+  </Accordion>
+
+  <Accordion title="Storage">
+    Persistent key-value storage.
+    
+    ```bash
+    npm install @capacitor/preferences
+    npx cap sync
+    ```
+    
+    ```typescript
+    import { Preferences } from '@capacitor/preferences';
+    
+    await Preferences.set({ key: 'theme', value: 'dark' });
+    const { value } = await Preferences.get({ key: 'theme' });
+    ```
+  </Accordion>
+
+  <Accordion title="Geolocation">
+    Access device GPS and location services.
+    
+    ```bash
+    npm install @capacitor/geolocation
+    npx cap sync
+    ```
+    
+    ```typescript
+    import { Geolocation } from '@capacitor/geolocation';
+    
+    const coordinates = await Geolocation.getCurrentPosition();
+    ```
+  </Accordion>
+
+  <Accordion title="Push Notifications">
+    Send and receive push notifications.
+    
+    ```bash
+    npm install @capacitor/push-notifications
+    npx cap sync
+    ```
+    
+    Requires additional Firebase configuration for Android.
+  </Accordion>
+
+  <Accordion title="Status Bar">
+    Control the device status bar appearance.
+    
+    ```bash
+    npm install @capacitor/status-bar
+    npx cap sync
+    ```
+    
+    ```typescript
+    import { StatusBar, Style } from '@capacitor/status-bar';
+    
+    await StatusBar.setStyle({ style: Style.Dark });
+    ```
+  </Accordion>
+
+  <Accordion title="Haptics">
+    Trigger haptic feedback (vibrations).
+    
+    ```bash
+    npm install @capacitor/haptics
+    npx cap sync
+    ```
+    
+    ```typescript
+    import { Haptics, ImpactStyle } from '@capacitor/haptics';
+    
+    await Haptics.impact({ style: ImpactStyle.Medium });
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### Registering Custom Plugins
+
+If you create a custom plugin, register it in `MainActivity.java`:
+
+```java
+package com.ciclovital.app;
+
+import com.getcapacitor.BridgeActivity;
+import com.example.customplugin.CustomPlugin;
+
+public class MainActivity extends BridgeActivity {
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        
+        // Register custom plugin
+        registerPlugin(CustomPlugin.class);
+    }
+}
+```
+
+## Platform-Specific Configuration
+
+You can add platform-specific settings to `capacitor.config.json`:
+
+```json capacitor.config.json
+{
+  "appId": "com.ciclovital.app",
+  "appName": "CicloVital",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "android": {
+    "buildOptions": {
+      "keystorePath": "/path/to/keystore",
+      "keystoreAlias": "ciclovital"
+    },
+    "backgroundColor": "#ffffff",
+    "allowMixedContent": false,
+    "captureInput": true,
+    "webContentsDebuggingEnabled": true
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "backgroundColor": "#ffffff",
+      "showSpinner": false
+    }
+  }
+}
+```
+
+### Android-Specific Options
+
+| Option | Description |
+|--------|-------------|
+| **backgroundColor** | Default background color for the WebView |
+| **allowMixedContent** | Allow HTTP content in HTTPS pages (not recommended) |
+| **captureInput** | Capture keyboard input events |
+| **webContentsDebuggingEnabled** | Enable Chrome DevTools debugging |
+
+## Development Configuration
+
+For development with live reload, temporarily add a `server` configuration:
+
+```json capacitor.config.json
+{
+  "appId": "com.ciclovital.app",
+  "appName": "CicloVital",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "server": {
+    "url": "http://192.168.1.100:5173",
+    "cleartext": true
+  }
+}
+```
+
+<Warning>
+  The `server` configuration makes the app load content from your dev server instead of bundled assets. This is useful during development but **must be removed before production builds**.
+</Warning>
+
+<Steps>
+  <Step title="Start Dev Server">
+    ```bash
+    npm run dev
+    ```
+  </Step>
+
+  <Step title="Find Your Local IP">
+    ```bash
+    # On Linux/Mac
+    ifconfig | grep "inet "
+    
+    # On Windows
+    ipconfig
+    ```
+  </Step>
+
+  <Step title="Update Config">
+    Add the `server` block with your local IP and port.
+  </Step>
+
+  <Step title="Rebuild and Run">
+    ```bash
+    npx cap copy android
+    npx cap run android
+    ```
+  </Step>
+</Steps>
+
+## TypeScript Configuration
+
+For TypeScript projects, install type definitions:
+
+```bash
+npm install --save-dev @capacitor/cli
+```
+
+Capacitor plugins include their own TypeScript definitions, so you get full IntelliSense support.
+
+## Updating Capacitor
+
+To update Capacitor to the latest version:
+
+<Steps>
+  <Step title="Update Core Packages">
+    ```bash
+    npm install @capacitor/core@latest @capacitor/cli@latest
+    npm install @capacitor/android@latest
+    ```
+  </Step>
+
+  <Step title="Update Native Projects">
+    ```bash
+    npx cap sync
+    ```
+  </Step>
+
+  <Step title="Review Migration Guide">
+    Check the [Capacitor migration guide](https://capacitorjs.com/docs/updating/7-0) for breaking changes between major versions.
+  </Step>
+</Steps>
+
+## Debugging Capacitor Apps
+
+### Chrome DevTools (Android)
+
+<Steps>
+  <Step title="Enable WebView Debugging">
+    Add to `capacitor.config.json`:
+    
+    ```json
+    {
+      "android": {
+        "webContentsDebuggingEnabled": true
+      }
+    }
+    ```
+  </Step>
+
+  <Step title="Connect Device">
+    Run your app on a device or emulator:
+    
+    ```bash
+    npx cap run android
+    ```
+  </Step>
+
+  <Step title="Open Chrome DevTools">
+    1. Open Chrome browser
+    2. Navigate to `chrome://inspect`
+    3. Click **Inspect** under your device
+  </Step>
+</Steps>
+
+### Native Logs
+
+View native Android logs:
+
+```bash
+# View all logs
+adb logcat
+
+# Filter by app
+adb logcat | grep -i ciclovital
+
+# View Capacitor bridge logs
+adb logcat | grep -i Capacitor
+```
+
+## Environment-Specific Builds
+
+Manage different configurations for development, staging, and production:
+
+```json
+// capacitor.config.ts (TypeScript alternative)
+import { CapacitorConfig } from '@capacitor/cli';
+
+const config: CapacitorConfig = {
+  appId: process.env.APP_ID || 'com.ciclovital.app',
+  appName: 'CicloVital',
+  webDir: 'dist',
+  bundledWebRuntime: false,
+  server: process.env.NODE_ENV === 'development' ? {
+    url: `http://${process.env.DEV_SERVER_HOST}:5173`,
+    cleartext: true
+  } : undefined
+};
+
+export default config;
+```
+
+## Troubleshooting
+
+### Plugin Not Found
+
+If a plugin isn't recognized:
+
+```bash
+npx cap sync android
+npx cap open android
+```
+
+Then rebuild in Android Studio.
+
+### WebView Blank Screen
+
+Ensure web assets are built and synced:
+
+```bash
+npm run build
+npx cap copy android
+```
+
+### CORS Errors
+
+Capacitor apps use the `capacitor://localhost` scheme, which bypasses CORS. If you see CORS errors, your API server may need to allow this origin, or use Capacitor's HTTP plugin:
+
+```bash
+npm install @capacitor/http
+```
+
+```typescript
+import { CapacitorHttp } from '@capacitor/http';
+
+const response = await CapacitorHttp.get({
+  url: 'https://api.ciclovital.com/data'
+});
+```
+
+## Resources
+
+<CardGroup cols={2}>
+  <Card title="Capacitor Docs" icon="book" href="https://capacitorjs.com/docs">
+    Official Capacitor documentation
+  </Card>
+  <Card title="Plugin Registry" icon="plug" href="https://capacitorjs.com/docs/plugins">
+    Browse available Capacitor plugins
+  </Card>
+  <Card title="Android Setup" icon="android" href="/mobile/android-setup">
+    Build and run the Android app
+  </Card>
+  <Card title="API Reference" icon="code" href="https://capacitorjs.com/docs/apis">
+    Capacitor API documentation
+  </Card>
+</CardGroup>

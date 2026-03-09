@@ -1,0 +1,265 @@
+---
+title: 'useDailyRecord'
+description: 'Custom hook for managing daily health records with CRUD operations'
+---
+
+## Overview
+
+The `useDailyRecord` hook provides complete CRUD (Create, Read, Update, Delete) operations for daily health records. It allows users to track and manage their daily health data including mood, symptoms, and other vitals.
+
+## Hook Signature
+
+```javascript
+const {
+  getDailyRecord,
+  createDailyRecord,
+  deleteDailyRecord,
+  updateDailyRecord
+} = useDailyRecord();
+```
+
+## Return Value
+
+The hook returns an object containing the following functions:
+
+### Functions
+
+#### `getDailyRecord`
+```javascript
+async (userId) => Promise<Array | string>
+```
+Retrieves all daily records for a specific user.
+
+**Parameters:**
+- `userId` (string/number): The ID of the user
+
+**Returns:**
+- On success: Array of daily record objects
+- On error: Error message string
+
+**Example:**
+```javascript
+const records = await getDailyRecord(user.id);
+if (Array.isArray(records)) {
+  console.log('Daily records:', records);
+} else {
+  console.error('Error:', records);
+}
+```
+
+#### `createDailyRecord`
+```javascript
+async (recordData) => Promise<Object>
+```
+Creates a new daily health record.
+
+**Parameters:**
+- `recordData` (Object): Daily record data including:
+  - `userId` (string/number): User ID
+  - Health metrics (mood, symptoms, vitals, etc.)
+  - `date` (string): Record date
+
+**Returns:**
+- Response object from the service with `ok` status and data/error message
+
+**Example:**
+```javascript
+const newRecord = {
+  userId: user.id,
+  date: '2026-03-09',
+  mood: 'good',
+  symptoms: ['fatigue'],
+  notes: 'Feeling better today'
+};
+
+const result = await createDailyRecord(newRecord);
+if (result.ok) {
+  console.log('Record created:', result.data);
+} else {
+  console.error('Error:', result.messageError);
+}
+```
+
+#### `deleteDailyRecord`
+```javascript
+async (id) => Promise<Object | string>
+```
+Deletes a daily record by its ID.
+
+**Parameters:**
+- `id` (string/number): Daily record ID to delete
+
+**Returns:**
+- On success: Deleted record data object
+- On error: Error message string
+
+**Example:**
+```javascript
+const result = await deleteDailyRecord(recordId);
+if (typeof result === 'object') {
+  console.log('Record deleted:', result);
+} else {
+  console.error('Error:', result);
+}
+```
+
+#### `updateDailyRecord`
+```javascript
+async (id, recordData) => Promise<Object>
+```
+Updates an existing daily record.
+
+**Parameters:**
+- `id` (string/number): Daily record ID to update
+- `recordData` (Object): Updated record data
+
+**Returns:**
+- Response object from the service with `ok` status and data/error message
+
+**Example:**
+```javascript
+const updatedData = {
+  mood: 'excellent',
+  symptoms: [],
+  notes: 'Much better after rest'
+};
+
+const result = await updateDailyRecord(recordId, updatedData);
+if (result.ok) {
+  console.log('Record updated:', result.data);
+} else {
+  console.error('Error:', result.messageError);
+}
+```
+
+## Usage Example
+
+```javascript
+import { useDailyRecord } from '../hooks/useDailyRecord';
+import { useContext, useEffect, useState } from 'react';
+import UserContext from '../contexts/UserContext';
+
+function DailyRecordManager() {
+  const {
+    getDailyRecord,
+    createDailyRecord,
+    deleteDailyRecord,
+    updateDailyRecord
+  } = useDailyRecord();
+  
+  const { user } = useContext(UserContext);
+  const [records, setRecords] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Load user's daily records
+  useEffect(() => {
+    const loadRecords = async () => {
+      setLoading(true);
+      const data = await getDailyRecord(user.id);
+      if (Array.isArray(data)) {
+        setRecords(data);
+      }
+      setLoading(false);
+    };
+    loadRecords();
+  }, [user.id, getDailyRecord]);
+
+  // Create new record
+  const handleCreate = async (formData) => {
+    const recordData = {
+      userId: user.id,
+      date: new Date().toISOString(),
+      ...formData
+    };
+    
+    const result = await createDailyRecord(recordData);
+    if (result.ok) {
+      setRecords([...records, result.data]);
+      alert('Record created successfully');
+    } else {
+      alert(result.messageError);
+    }
+  };
+
+  // Update existing record
+  const handleUpdate = async (recordId, updatedData) => {
+    const result = await updateDailyRecord(recordId, updatedData);
+    if (result.ok) {
+      setRecords(records.map(r => 
+        r.id === recordId ? result.data : r
+      ));
+      alert('Record updated successfully');
+    } else {
+      alert(result.messageError);
+    }
+  };
+
+  // Delete record
+  const handleDelete = async (recordId) => {
+    const result = await deleteDailyRecord(recordId);
+    if (typeof result === 'object') {
+      setRecords(records.filter(r => r.id !== recordId));
+      alert('Record deleted successfully');
+    } else {
+      alert(result);
+    }
+  };
+
+  if (loading) return <div>Loading...</div>;
+
+  return (
+    <div>
+      <h2>Daily Records</h2>
+      {/* Record list and forms */}
+    </div>
+  );
+}
+```
+
+## Complete CRUD Example
+
+```javascript
+import { useDailyRecord } from '../hooks/useDailyRecord';
+
+function RecordForm({ recordToEdit, onSuccess }) {
+  const { createDailyRecord, updateDailyRecord } = useDailyRecord();
+  const [formData, setFormData] = useState(recordToEdit || {});
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (recordToEdit) {
+      // Update existing record
+      const result = await updateDailyRecord(recordToEdit.id, formData);
+      if (result.ok) {
+        onSuccess(result.data);
+      }
+    } else {
+      // Create new record
+      const result = await createDailyRecord(formData);
+      if (result.ok) {
+        onSuccess(result.data);
+      }
+    }
+  };
+
+  return <form onSubmit={handleSubmit}>{/* form fields */}</form>;
+}
+```
+
+## Dependencies
+
+This hook requires:
+- `dailyRecordService` for API calls:
+  - `getDailyRecordsByUserID`: Fetch records by user ID
+  - `createDailyRecordService`: Create a new record
+  - `updateDailyRecordService`: Update an existing record
+  - `deleteDailyRecordService`: Delete a record by ID
+
+## Notes
+
+- All functions use `useCallback` for optimization
+- `createDailyRecord` and `updateDailyRecord` return the full service response object with `ok` and `data`/`messageError` properties
+- `getDailyRecord` and `deleteDailyRecord` return simplified responses (data or error message)
+- Components should handle loading states and error messages
+- The hook does not maintain internal state - components manage their own state

@@ -1,0 +1,196 @@
+---
+title: 'Message Service'
+description: 'Chat message and AI interaction service'
+---
+
+## Overview
+
+The Message Service handles chat messages and AI interactions in the CicloVital application. It provides functionality to retrieve chat messages and send messages to the AI assistant for responses.
+
+## API Configuration
+
+The service uses environment-based API URL configuration:
+
+```javascript
+const isProd = import.meta.env.VITE_PROD === 'true';
+const API_URL = isProd 
+  ? import.meta.env.VITE_URL_API_MESSAGE 
+  : import.meta.env.VITE_URL_API_LOCAL_MESSAGE;
+```
+
+## Functions
+
+### getMessagesByChatID
+
+Retrieves all messages for a specific chat conversation.
+
+```javascript
+export const getMessagesByChatID = async (chatId) => {
+  // Implementation
+}
+```
+
+<ParamField path="chatId" type="string" required>
+  The unique identifier of the chat whose messages to retrieve
+</ParamField>
+
+<ResponseField name="response" type="object">
+  Response object with message data
+  
+  **Success Response:**
+  ```javascript
+  {
+    ok: true,
+    data: res.data // Array of message objects
+  }
+  ```
+  
+  **Error Response:**
+  ```javascript
+  {
+    ok: false,
+    messageError: err.message // Error message
+  }
+  ```
+</ResponseField>
+
+**HTTP Method:** `GET`  
+**Endpoint:** `{API_URL}/porChat/{chatId}`
+
+#### Example Usage
+
+```javascript
+import { getMessagesByChatID } from '@/services/messageService';
+
+const chatId = 'chat456';
+const result = await getMessagesByChatID(chatId);
+
+if (result.ok) {
+  console.log('Chat messages:', result.data);
+  result.data.forEach(message => {
+    console.log(`${message.sender}: ${message.text}`);
+  });
+} else {
+  console.error('Error fetching messages:', result.messageError);
+}
+```
+
+---
+
+### sendMessageToIA
+
+Sends a message to the AI assistant and receives a response.
+
+```javascript
+export const sendMessageToIA = async (chatId, mensaje, userId) => {
+  // Implementation
+}
+```
+
+<ParamField path="chatId" type="string" required>
+  The unique identifier of the chat conversation
+</ParamField>
+
+<ParamField path="mensaje" type="string" required>
+  The message text to send to the AI assistant
+</ParamField>
+
+<ParamField path="userId" type="string" required>
+  The unique identifier of the user sending the message
+</ParamField>
+
+<ResponseField name="response" type="object">
+  Response object with AI response data
+  
+  **Success Response:**
+  ```javascript
+  {
+    ok: true,
+    data: res.data // AI response and message data
+  }
+  ```
+  
+  **Error Response:**
+  ```javascript
+  {
+    ok: false,
+    messageError: err.message // Error message
+  }
+  ```
+</ResponseField>
+
+**HTTP Method:** `POST`  
+**Endpoint:** `{API_URL}/ia`
+
+**Request Body:**
+```javascript
+{
+  chatId: string,
+  mensaje: string,
+  userId: string
+}
+```
+
+#### Example Usage
+
+```javascript
+import { sendMessageToIA } from '@/services/messageService';
+
+const chatId = 'chat456';
+const userId = 'user123';
+const userMessage = '¿Cómo puedo mejorar mi bienestar hoy?';
+
+const result = await sendMessageToIA(chatId, userMessage, userId);
+
+if (result.ok) {
+  console.log('AI response:', result.data);
+  const aiMessage = result.data.response;
+  console.log('AI says:', aiMessage);
+} else {
+  console.error('Error sending message to AI:', result.messageError);
+}
+```
+
+#### Real-World Integration Example
+
+```javascript
+import { sendMessageToIA, getMessagesByChatID } from '@/services/messageService';
+
+// Send a message and update UI
+async function handleSendMessage(chatId, userId, messageText) {
+  // Send message to AI
+  const result = await sendMessageToIA(chatId, messageText, userId);
+  
+  if (result.ok) {
+    // Refresh messages to show both user message and AI response
+    const messagesResult = await getMessagesByChatID(chatId);
+    
+    if (messagesResult.ok) {
+      return messagesResult.data;
+    }
+  } else {
+    throw new Error(result.messageError);
+  }
+}
+
+// Usage in component
+const messages = await handleSendMessage('chat456', 'user123', 'Hello!');
+```
+
+## Error Handling
+
+All service methods use a consistent error handling pattern:
+
+- **Error Source:** Returns `err.message` from caught exceptions
+- **Response Format:** Always returns `{ ok: boolean, data/messageError }`
+- **Debug Logging:** Errors in `sendMessageToIA` are logged to console
+
+## Notes
+
+- The `sendMessageToIA` function processes both user and AI messages on the backend
+- AI responses are typically stored in the chat history automatically
+- Use `getMessagesByChatID` after `sendMessageToIA` to retrieve the complete conversation
+
+## Source Code
+
+Location: `src/services/messageService.js`

@@ -1,0 +1,192 @@
+---
+title: 'Stats Service'
+description: 'User statistics and analytics service'
+---
+
+## Overview
+
+The Stats Service provides statistical analysis and analytics for user data in the CicloVital application. It retrieves aggregated statistics for a specific time period, enabling users to track their health and wellness trends over time.
+
+## API Configuration
+
+The service uses environment-based API URL configuration:
+
+```javascript
+const isProd = import.meta.env.VITE_PROD === 'true';
+const API_URL = isProd 
+  ? import.meta.env.VITE_URL_API_STATS 
+  : import.meta.env.VITE_URL_API_LOCAL_STATS;
+```
+
+## Functions
+
+### getStatsService
+
+Retrieves statistical data for a user within a specified date range.
+
+```javascript
+export const getStatsService = async (userId, fechaInicio, fechaFinal) => {
+  // Implementation
+}
+```
+
+<ParamField path="userId" type="string" required>
+  The unique identifier of the user whose statistics to retrieve
+</ParamField>
+
+<ParamField path="fechaInicio" type="string" required>
+  The start date for the statistics period
+  
+  **Format:** ISO date string (e.g., '2026-03-01' or '2026-03-01T00:00:00Z')
+</ParamField>
+
+<ParamField path="fechaFinal" type="string" required>
+  The end date for the statistics period
+  
+  **Format:** ISO date string (e.g., '2026-03-09' or '2026-03-09T23:59:59Z')
+</ParamField>
+
+<ResponseField name="response" type="object">
+  Response object with statistics data
+  
+  **Success Response:**
+  ```javascript
+  {
+    ok: true,
+    data: response.data // Statistics object with aggregated metrics
+  }
+  ```
+  
+  **Error Response:**
+  ```javascript
+  {
+    ok: false,
+    messageError: string // Error message from server or default error
+  }
+  ```
+</ResponseField>
+
+**HTTP Method:** `GET`  
+**Endpoint:** `{API_URL}/{userId}?fechaInicio={fechaInicio}&fechaFinal={fechaFinal}`
+
+#### Example Usage
+
+```javascript
+import { getStatsService } from '@/services/statsService';
+
+const userId = 'user123';
+const startDate = '2026-03-01';
+const endDate = '2026-03-09';
+
+const result = await getStatsService(userId, startDate, endDate);
+
+if (result.ok) {
+  console.log('User statistics:', result.data);
+  
+  // Example of accessing statistics data
+  const stats = result.data;
+  console.log(`Total records: ${stats.totalRecords}`);
+  console.log(`Average mood: ${stats.averageMood}`);
+  console.log(`Most common symptoms: ${stats.topSymptoms}`);
+} else {
+  console.error('Error fetching stats:', result.messageError);
+}
+```
+
+#### Advanced Usage Example
+
+```javascript
+import { getStatsService } from '@/services/statsService';
+
+// Get stats for the current month
+async function getCurrentMonthStats(userId) {
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  
+  const fechaInicio = startOfMonth.toISOString().split('T')[0];
+  const fechaFinal = endOfMonth.toISOString().split('T')[0];
+  
+  return await getStatsService(userId, fechaInicio, fechaFinal);
+}
+
+// Get stats for a custom date range
+async function getCustomRangeStats(userId, daysBack = 30) {
+  const endDate = new Date();
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - daysBack);
+  
+  const fechaInicio = startDate.toISOString().split('T')[0];
+  const fechaFinal = endDate.toISOString().split('T')[0];
+  
+  return await getStatsService(userId, fechaInicio, fechaFinal);
+}
+
+// Usage
+const monthStats = await getCurrentMonthStats('user123');
+const last30DaysStats = await getCustomRangeStats('user123', 30);
+```
+
+#### Integration with Dashboard
+
+```javascript
+import { getStatsService } from '@/services/statsService';
+import { useState, useEffect } from 'react';
+
+function StatsDashboard({ userId }) {
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
+  useEffect(() => {
+    async function loadStats() {
+      const endDate = new Date().toISOString().split('T')[0];
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - 30);
+      const fechaInicio = startDate.toISOString().split('T')[0];
+      
+      const result = await getStatsService(userId, fechaInicio, endDate);
+      
+      if (result.ok) {
+        setStats(result.data);
+      } else {
+        setError(result.messageError);
+      }
+      setLoading(false);
+    }
+    
+    loadStats();
+  }, [userId]);
+  
+  if (loading) return <div>Loading statistics...</div>;
+  if (error) return <div>Error: {error}</div>;
+  
+  return (
+    <div>
+      <h2>Your Statistics</h2>
+      {/* Render stats data */}
+    </div>
+  );
+}
+```
+
+## Error Handling
+
+All service methods use a consistent error handling pattern:
+
+- **Server Errors:** Returns `error.response?.data` if available
+- **Connection Errors:** Returns default message: `'Error al conectar con el servidor.'`
+- **Response Format:** Always returns `{ ok: boolean, data/messageError }`
+- **Debug Logging:** Errors are logged to console for debugging
+
+## Query Parameters
+
+The service uses URL query parameters for date filtering:
+
+- `fechaInicio`: Start date of the statistics period
+- `fechaFinal`: End date of the statistics period
+- Both parameters are required for the request
+
+## Source Code
+
+Location: `src/services/statsService.js`

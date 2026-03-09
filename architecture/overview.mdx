@@ -1,0 +1,205 @@
+---
+title: "Architecture Overview"
+description: "High-level architecture and technical stack of CicloVital"
+---
+
+CicloVital is a modern mental health and wellness tracking SaaS platform built with a mobile-first approach using React and Ionic Framework.
+
+## Tech Stack
+
+The application is built on a modern JavaScript stack optimized for cross-platform mobile development:
+
+### Frontend Framework
+- **React 19.1.0** - Core UI framework
+- **Ionic React 8.6.4** - Mobile-optimized UI components and native capabilities
+- **Vite 7.0.4** - Fast build tool and development server
+- **React Router DOM 5.3.4** - Client-side routing
+
+### Mobile Development
+- **Capacitor 7.4.2** - Native runtime for deploying to iOS and Android
+- **Capacitor Android 7.4.2** - Android platform support
+
+### UI Libraries
+- **Bootstrap 5.3.7** - CSS framework
+- **React Bootstrap 2.10.10** - Bootstrap components for React
+- **Ionicons 8.0.13** - Icon library
+
+### Data Visualization & Forms
+- **FullCalendar 6.1.18** - Calendar component for daily records
+- **Recharts 3.7.0** - Charts and statistics visualization
+- **React Hook Form 7.61.1** - Form validation and management
+
+### Communication
+- **Axios 1.10.0** - HTTP client for API calls
+- **STOMP.js 7.1.1** - WebSocket messaging protocol
+- **SockJS Client 1.6.1** - WebSocket fallback support
+
+## Project Structure
+
+The application follows a well-organized directory structure:
+
+```
+src/
+├── assets/          # Static assets (images, SVGs)
+│   ├── images/
+│   └── svgs/
+├── components/      # Reusable UI components
+│   ├── Calendar/
+│   ├── Footer/
+│   ├── Header/
+│   └── SideMenu/
+├── contexts/        # React Context providers
+│   ├── ChatContext.js
+│   ├── ChatProvider.jsx
+│   ├── ThemeContext.js
+│   ├── ThemeProvider.jsx
+│   ├── UserContext.js
+│   └── UserProvider.jsx
+├── hooks/           # Custom React hooks
+│   ├── useAuth.js
+│   ├── useChat.js
+│   ├── useDailyRecord.js
+│   ├── useLocalStorage.js
+│   ├── useMessage.js
+│   └── useStats.js
+├── pages/           # Page-level components
+│   ├── Chat/
+│   ├── Home/
+│   ├── Login/
+│   ├── Settings/
+│   ├── SignUp/
+│   └── StatsDashboard/
+├── services/        # API service layer
+│   ├── authService.js
+│   ├── chatService.js
+│   ├── dailyRecordService.js
+│   ├── messageService.js
+│   └── statsService.js
+├── theme/           # Theme and styling
+│   └── variables.css
+├── utils/           # Utility functions
+├── App.jsx          # Root application component
+├── AppContent.jsx   # Main routing and layout
+└── main.jsx         # Application entry point
+```
+
+## Application Architecture
+
+### Layered Architecture
+
+CicloVital follows a layered architecture pattern:
+
+1. **Presentation Layer** (`pages/`, `components/`)
+   - Page components for each route
+   - Reusable UI components
+   - Ionic UI framework integration
+
+2. **Business Logic Layer** (`hooks/`, `contexts/`)
+   - Custom hooks encapsulating business logic
+   - Context providers for global state management
+   - Form validation and data transformation
+
+3. **Data Access Layer** (`services/`)
+   - API service modules
+   - HTTP request handling
+   - Error handling and response formatting
+
+### Data Flow
+
+The application implements a unidirectional data flow:
+
+```
+User Interaction → Component → Hook → Service → API
+                                  ↓
+                              Context
+                                  ↓
+                          Local Storage
+                                  ↓
+                          Component Re-render
+```
+
+1. **User interactions** trigger component events
+2. **Custom hooks** process business logic and call services
+3. **Services** make API requests using Axios
+4. **Contexts** update global state
+5. **Local storage** persists critical data (user, theme, chat)
+6. **Components** re-render with updated data
+
+## Key Features
+
+### Authentication & User Management
+- User registration and login (see `src/hooks/useAuth.js:7`)
+- Persistent sessions via localStorage
+- Context-based user state management
+
+### AI-Powered Chat
+- Real-time messaging with WebSocket support
+- Multiple chat sessions management
+- Chat history persistence
+
+### Wellness Tracking
+- Daily record creation and management
+- Calendar visualization of wellness data
+- Metrics: sleep hours, exercise, energy, mood, motivation
+
+### Analytics Dashboard
+- Statistics visualization with charts
+- Wellness trend analysis
+- Historical data review
+
+## Configuration
+
+### Build Configuration
+
+The project uses Vite for building and development:
+
+```javascript
+// vite.config.js
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+
+export default defineConfig({
+  plugins: [react()],
+  define: { global: {} },
+  server: {
+    host: '0.0.0.0',
+  },
+})
+```
+
+### Mobile Configuration
+
+```json
+// capacitor.config.json
+{
+  "appId": "com.ciclovital.app",
+  "appName": "CicloVital",
+  "webDir": "dist",
+  "bundledWebRuntime": false
+}
+```
+
+## Development Workflow
+
+### Available Scripts
+
+- `npm run dev` - Start development server with Vite
+- `npm run build` - Build for production
+- `npm run preview` - Preview production build
+- `npm run lint` - Run ESLint
+
+### Environment Variables
+
+The application uses environment-based API URL configuration:
+
+```javascript
+const isProd = import.meta.env.VITE_PROD === 'true';
+const API_URL = isProd 
+  ? import.meta.env.VITE_URL_API_USER 
+  : import.meta.env.VITE_URL_API_LOCAL_USER;
+```
+
+## Next Steps
+
+- Learn about the [Frontend Architecture](/architecture/frontend)
+- Explore [Component Architecture](/architecture/components)

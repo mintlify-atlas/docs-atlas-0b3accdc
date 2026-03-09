@@ -1,0 +1,181 @@
+---
+title: 'useChat'
+description: 'Custom hook for managing chat operations including listing, creating, and deleting chats'
+---
+
+## Overview
+
+The `useChat` hook provides chat management functionality, allowing users to retrieve their chat list, create new chats, and delete existing chats. It integrates with localStorage to persist the current active chat.
+
+## Hook Signature
+
+```javascript
+const {
+  chatsList,
+  newChat,
+  deleteChat
+} = useChat();
+```
+
+## Return Value
+
+The hook returns an object containing the following functions:
+
+### Functions
+
+#### `chatsList`
+```javascript
+async (user) => Promise<Array | string>
+```
+Retrieves all chats for a specific user.
+
+**Parameters:**
+- `user` (Object): User object containing:
+  - `id` (string/number): User ID
+
+**Returns:**
+- On success: Array of chat objects
+- On error: Error message string
+
+**Example:**
+```javascript
+const chats = await chatsList({ id: userId });
+if (Array.isArray(chats)) {
+  // Handle successful chat list
+  console.log('User chats:', chats);
+} else {
+  // Handle error message
+  console.error('Error:', chats);
+}
+```
+
+#### `newChat`
+```javascript
+async (chat) => Promise<Object | string>
+```
+Creates a new chat and saves it to localStorage.
+
+**Parameters:**
+- `chat` (Object): Chat data object containing chat details
+
+**Returns:**
+- On success: Newly created chat object
+- On error: Error message string
+
+**Behavior:**
+- Creates a new chat via API
+- Saves the new chat to localStorage as the active chat
+- Returns the created chat data
+
+**Example:**
+```javascript
+const chatData = {
+  userId: currentUser.id,
+  title: 'New Conversation',
+  // other chat properties
+};
+
+const result = await newChat(chatData);
+if (typeof result === 'object') {
+  console.log('Chat created:', result);
+} else {
+  console.error('Error:', result);
+}
+```
+
+#### `deleteChat`
+```javascript
+async (id) => Promise<string>
+```
+Deletes a chat by its ID.
+
+**Parameters:**
+- `id` (string/number): Chat ID to delete
+
+**Returns:**
+- On success: `'Chat eliminado'` (Chat deleted)
+- On error: Error message string
+
+**Example:**
+```javascript
+const result = await deleteChat(chatId);
+if (result === 'Chat eliminado') {
+  console.log('Chat successfully deleted');
+  // Refresh chat list
+} else {
+  console.error('Delete failed:', result);
+}
+```
+
+## Usage Example
+
+```javascript
+import { useChat } from '../hooks/useChat';
+import { useContext, useEffect, useState } from 'react';
+import UserContext from '../contexts/UserContext';
+
+function ChatList() {
+  const { chatsList, newChat, deleteChat } = useChat();
+  const { user } = useContext(UserContext);
+  const [chats, setChats] = useState([]);
+
+  // Load user's chats
+  useEffect(() => {
+    const loadChats = async () => {
+      const userChats = await chatsList(user);
+      if (Array.isArray(userChats)) {
+        setChats(userChats);
+      }
+    };
+    loadChats();
+  }, [user, chatsList]);
+
+  // Create new chat
+  const handleNewChat = async () => {
+    const chatData = { userId: user.id, title: 'Nueva conversación' };
+    const result = await newChat(chatData);
+    if (typeof result === 'object') {
+      setChats([...chats, result]);
+    }
+  };
+
+  // Delete chat
+  const handleDeleteChat = async (chatId) => {
+    const result = await deleteChat(chatId);
+    if (result === 'Chat eliminado') {
+      setChats(chats.filter(chat => chat.id !== chatId));
+    }
+  };
+
+  return (
+    <div>
+      <button onClick={handleNewChat}>New Chat</button>
+      <ul>
+        {chats.map(chat => (
+          <li key={chat.id}>
+            {chat.title}
+            <button onClick={() => handleDeleteChat(chat.id)}>Delete</button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+```
+
+## Dependencies
+
+This hook requires:
+- `useLocalStorage` hook for persisting active chat
+- `chatService` for API calls:
+  - `getChatsById`: Fetch chats by user ID
+  - `creatChat`: Create a new chat
+  - `deletechat`: Delete a chat by ID
+
+## Notes
+
+- All functions use `useCallback` for optimization
+- The active chat is automatically saved to localStorage when created
+- Error handling returns string messages for easy display
+- Success responses return data objects or confirmation strings
+- The hook does not manage loading or error states - components should handle these

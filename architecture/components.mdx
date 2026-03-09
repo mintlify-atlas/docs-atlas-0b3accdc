@@ -1,0 +1,648 @@
+---
+title: "Component Architecture"
+description: "Component structure, patterns, and key UI components in CicloVital"
+---
+
+CicloVital's component architecture is built on React with Ionic Framework, following a modular, reusable design pattern.
+
+## Component Organization
+
+Components are organized by function and feature:
+
+```
+src/components/
+├── Calendar/           # Calendar and daily record components
+│   ├── Calendar.jsx
+│   ├── DailyRecord/
+│   │   └── DailyRecord.jsx
+│   └── DailyRecordEvent.jsx
+├── Footer/
+│   └── Footer.jsx
+├── Header/             # Navigation header
+│   └── Header.jsx
+└── SideMenu/           # Sidebar navigation
+    ├── SideMenu.jsx
+    ├── ChatItem/
+    │   └── ChatItem.jsx
+    ├── ChatsList/
+    │   └── ChatsList.jsx
+    └── ModalDailyRecord/
+        └── ModalDailyRecord.jsx
+
+src/pages/              # Page-level components
+├── Chat/
+│   ├── Chat.jsx
+│   ├── Message/
+│   ├── MessageInput/
+│   └── MessageList/
+├── Home/
+├── Login/
+├── Settings/
+├── SignUp/
+└── StatsDashboard/
+```
+
+## Component Patterns
+
+### Ionic Component Integration
+
+All components leverage Ionic's mobile-optimized components:
+
+```jsx
+import { 
+  IonHeader, 
+  IonTitle, 
+  IonToolbar, 
+  IonButton, 
+  IonButtons, 
+  IonIcon 
+} from '@ionic/react';
+```
+
+### Context Consumption Pattern
+
+Components access global state via `useContext`:
+
+```jsx
+import { useContext } from 'react';
+import UserContext from '../../contexts/UserContext';
+
+const MyComponent = () => {
+  const { user } = useContext(UserContext);
+  
+  return (
+    <div>
+      {user ? `Welcome ${user.nombre}` : 'Please login'}
+    </div>
+  );
+}
+```
+
+## Key Components
+
+### Header Component
+
+**Location:** `src/components/Header/Header.jsx:9`
+
+**Purpose:** Global navigation header with conditional rendering based on auth state
+
+```jsx
+import { 
+  IonHeader, 
+  IonTitle, 
+  IonToolbar, 
+  IonButton, 
+  IonButtons, 
+  IonIcon, 
+  IonRouterLink 
+} from '@ionic/react';
+import { chatbox, home, settings } from 'ionicons/icons';
+import { useHistory } from 'react-router-dom';
+import { useContext } from 'react';
+import UserContext from '../../contexts/UserContext';
+
+const Header = () => {
+  const history = useHistory();
+  const { user } = useContext(UserContext);
+
+  return (
+    <IonHeader>
+      <IonToolbar>
+        <IonTitle className='header-title' slot="start">
+          <IonRouterLink color='light' routerLink='/home'>
+            CicloVital
+          </IonRouterLink>
+        </IonTitle>
+        
+        <IonButtons slot="end">
+          {user === null && (
+            <>
+              <IonButton onClick={() => history.push('/home')}>
+                <IonIcon icon={home}/>
+                <span className="header-button-text">Inicio</span>
+              </IonButton>
+              <IonButton onClick={() => history.push('/settings')}>
+                <IonIcon icon={settings}/>
+                <span className="header-button-text">Ajustes</span>
+              </IonButton>
+            </>
+          )}
+          {user !== null && (
+            <IonButton onClick={() => history.push('/chat')}>
+              <IonIcon icon={chatbox}/>
+              <span className="header-button-text">Chat</span>
+            </IonButton>
+          )}
+        </IonButtons>
+      </IonToolbar>
+    </IonHeader>
+  )
+}
+```
+
+**Features:**
+- Conditional navigation buttons based on authentication
+- Ionic icons and routing
+- Context integration for user state
+- Responsive button text
+
+### SideMenu Component
+
+**Location:** `src/components/SideMenu/SideMenu.jsx:13`
+
+**Purpose:** Sidebar navigation for authenticated users with quick actions
+
+```jsx
+import React, { useContext, useState } from 'react';
+import Calendar from '../Calendar/Calendar';
+import ModalDailyRecord from './ModalDailyRecord/ModalDailyRecord';
+import { 
+  IonAlert, 
+  IonButton, 
+  IonButtons, 
+  IonCol, 
+  IonContent, 
+  IonGrid, 
+  IonHeader, 
+  IonIcon, 
+  IonItem, 
+  IonLabel, 
+  IonRow, 
+  IonText, 
+  IonTitle, 
+  IonToolbar 
+} from '@ionic/react';
+import UserContext from '../../contexts/UserContext';
+import { useAuth } from '../../hooks/useAuth';
+import ChatsList from './ChatsList/ChatsList';
+import { 
+  chatbubbleEllipsesOutline, 
+  clipboardOutline, 
+  calendarOutline, 
+  statsChartOutline, 
+  settings 
+} from 'ionicons/icons';
+import ChatContext from '../../contexts/ChatContext';
+import { useHistory } from 'react-router-dom/cjs/react-router-dom.min';
+
+const SideMenu = () => {
+  const { user } = useContext(UserContext);
+  const { setCurrentChat } = useContext(ChatContext);
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const { handleAlert, showAlert, alertHeader, alertMessage } = useAuth();
+  const history = useHistory();
+
+  return (
+    <>
+      {/* Calendar Modal */}
+      {showCalendar && (
+        <Calendar 
+          user={user} 
+          isOpen={showCalendar} 
+          onClose={() => setShowCalendar(false)} 
+        />
+      )}
+
+      {/* Daily Record Modal */}
+      {showModal && (
+        <ModalDailyRecord
+          isOpen={showModal}
+          onClose={() => setShowModal(false)}
+          handleAlert={handleAlert}
+          initialData={null}
+        />
+      )}
+      
+      <IonContent color='dark'>
+        <br />
+        <IonGrid>
+          <IonCol size="12">
+            <IonTitle>Opciones</IonTitle>
+            <br />
+            
+            {/* New Chat */}
+            <IonItem
+              className='optionIonItem'
+              expand="block"
+              color="dark"
+              onClick={() => {
+                setCurrentChat(null);
+                history.push("/chat");
+              }}
+            >
+              <IonIcon icon={chatbubbleEllipsesOutline} />
+              Nuevo chat
+            </IonItem>
+            
+            {/* New Daily Record */}
+            <IonItem 
+              className='optionIonItem'
+              expand="block"
+              color='dark' 
+              onClick={() => setShowModal(true)}
+            >
+              <IonIcon icon={clipboardOutline} />
+              Nuevo Registro
+            </IonItem>
+            
+            {/* Calendar */}
+            <IonItem
+              className='optionIonItem'
+              expand="block"
+              color='dark'
+              onClick={() => setShowCalendar(!showCalendar)}
+            >
+              <IonIcon icon={calendarOutline} />
+              Calendario
+            </IonItem>
+            
+            {/* Statistics */}
+            <IonItem
+              className='optionIonItem'
+              expand="block"
+              color='dark'
+              onClick={() => {
+                history.push("/statsDashboard");
+                setCurrentChat(null);
+              }}
+            >
+              <IonIcon icon={statsChartOutline} />
+              Estadísticas
+            </IonItem>
+          </IonCol>
+        </IonGrid>
+        
+        <IonLabel>Chats</IonLabel>
+        <ChatsList user={user} />
+      
+        <IonButtons className='sideMenuButtons'>
+          <IonButton onClick={() => history.push("/settings")}>
+            <IonIcon icon={settings} />
+          </IonButton>
+        </IonButtons>
+      </IonContent>
+      
+      <IonAlert
+        color="primary"
+        isOpen={showAlert}
+        onDidDismiss={() => handleAlert(false, "", "")}
+        header={alertHeader}
+        message={alertMessage}
+        buttons={["Ok"]}
+      />
+    </>
+  )
+}
+```
+
+**Features:**
+- Quick action menu for authenticated features
+- Modal management for calendar and daily records
+- Chat list display
+- Settings navigation
+- Alert integration from useAuth hook
+- Context integration for user and chat state
+
+**User Actions:**
+1. **Nuevo chat** - Create new AI chat session
+2. **Nuevo Registro** - Add daily wellness record
+3. **Calendario** - View calendar of records
+4. **Estadísticas** - View analytics dashboard
+
+### Calendar Component
+
+**Location:** `src/components/Calendar/Calendar.jsx:13`
+
+**Purpose:** Display and interact with wellness record calendar
+
+```jsx
+import React, { useEffect, useState } from 'react';
+import FullCalendar from '@fullcalendar/react';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import timeGridPlugin from '@fullcalendar/timegrid';
+import interactionPlugin from '@fullcalendar/interaction';
+import { useDailyRecord } from '../../hooks/useDailyRecord';
+import RegistroEvento from './DailyRecordEvent';
+import DailyRecord from './DailyRecord/DailyRecord';
+import { 
+  IonButton, 
+  IonButtons, 
+  IonContent, 
+  IonHeader, 
+  IonIcon, 
+  IonModal, 
+  IonTitle, 
+  IonToolbar 
+} from '@ionic/react';
+import { close } from 'ionicons/icons';
+
+const Calendar = ({ user, isOpen, onClose }) => {
+  const { getDailyRecord } = useDailyRecord();
+  const [eventos, setEventos] = useState([]);
+  const [selectedEvent, setSelectedEvent] = useState(null);
+
+  useEffect(() => {
+    const cargarRegistros = async () => {
+      const registros = await getDailyRecord(user.id);
+      if (Array.isArray(registros)) {
+        const eventosFormateados = registros.map(reg => ({
+          id: reg.id,
+          title: 'Registro Diarios',
+          date: reg.date,
+          extendedProps: {
+            recordId: reg.id,
+            recordDate: reg.date,
+            horasSueno: reg.horasSueno,
+            ejercicio: reg.ejercicio,
+            energia: reg.energia,
+            estadoAnimo: reg.estadoAnimo,
+            motivacion: reg.motivacion,
+            comentario: reg.comentario
+          }
+        }));
+        setEventos(eventosFormateados);
+      }
+    };
+
+    cargarRegistros();
+  }, [getDailyRecord, user.id]);
+
+  const renderRegistroContent = (eventInfo) => {
+    return <RegistroEvento eventInfo={eventInfo} />;
+  };
+
+  return (
+    <IonModal isOpen={isOpen} onDidDismiss={onClose} className="calendar-modal">
+      <IonContent>
+        <IonHeader>
+          <IonToolbar>
+            <IonTitle>Calendario de registros</IonTitle>
+            <IonButtons slot="end">
+              <IonButton onClick={onClose}>
+                <IonIcon icon={close} />
+              </IonButton>
+            </IonButtons>
+          </IonToolbar>
+        </IonHeader>
+        
+        <FullCalendar
+          plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+          initialView="dayGridMonth"
+          height="90%"
+          width="90%"
+          events={eventos}
+          eventContent={renderRegistroContent}
+          eventClick={(info) => {
+            info.jsEvent.preventDefault();
+            setSelectedEvent(info);
+          }}
+        />
+
+        {selectedEvent && (
+          <DailyRecord
+            eventInfo={selectedEvent}
+            onClose={() => setSelectedEvent(null)}
+          />
+        )}
+      </IonContent>
+    </IonModal>
+  );
+};
+```
+
+**Features:**
+- FullCalendar integration with month view
+- Dynamic event loading from API
+- Custom event rendering
+- Modal-based display
+- Event click handling for details
+- Custom hook integration (useDailyRecord)
+
+**Data Flow:**
+1. Component mounts and fetches records via `useDailyRecord`
+2. Records transformed into FullCalendar event format
+3. Events rendered with custom `RegistroEvento` component
+4. Click opens `DailyRecord` detail modal
+
+## Page Components
+
+### Chat Page
+
+**Location:** `src/pages/Chat/`
+
+Composed of multiple sub-components:
+- `Chat.jsx` - Main chat container
+- `MessageList/` - Displays message history
+- `MessageInput/` - Message composition input
+- `Message/` - Individual message component
+
+### StatsDashboard Page
+
+**Location:** `src/pages/StatsDashboard/`
+
+Displays wellness analytics using Recharts:
+- Charts for mood trends
+- Sleep pattern visualization
+- Exercise tracking
+- Energy level analysis
+
+### Authentication Pages
+
+**SignUp:** `src/pages/SignUp/` - User registration form
+**Login:** `src/pages/Login/` - Authentication form
+
+Both use:
+- React Hook Form for validation
+- useAuth hook for operations
+- IonAlert for user feedback
+
+## Component Communication
+
+### Parent-Child Props
+
+Standard React prop passing:
+
+```jsx
+<Calendar 
+  user={user} 
+  isOpen={showCalendar} 
+  onClose={() => setShowCalendar(false)} 
+/>
+```
+
+### Context for Global State
+
+Components access shared state via Context:
+
+```jsx
+const { user } = useContext(UserContext);
+const { currentChat, setCurrentChat } = useContext(ChatContext);
+const { theme } = useContext(ThemeContext);
+```
+
+### Custom Hooks for Logic
+
+Business logic encapsulated in hooks:
+
+```jsx
+const { getDailyRecord } = useDailyRecord();
+const { chatsList, newChat, deleteChat } = useChat();
+const { registerUser, login, logout } = useAuth();
+```
+
+## Modal Pattern
+
+CicloVital uses Ionic's modal system extensively:
+
+```jsx
+const [showModal, setShowModal] = useState(false);
+
+// Trigger
+<IonButton onClick={() => setShowModal(true)}>Open</IonButton>
+
+// Modal
+<IonModal isOpen={showModal} onDidDismiss={() => setShowModal(false)}>
+  <IonContent>
+    {/* Modal content */}
+  </IonContent>
+</IonModal>
+```
+
+**Used for:**
+- Calendar display
+- Daily record creation/editing
+- Record details viewing
+- Settings dialogs
+
+## Alert Pattern
+
+Alerts provide user feedback:
+
+```jsx
+const { handleAlert, showAlert, alertHeader, alertMessage } = useAuth();
+
+<IonAlert
+  color="primary"
+  isOpen={showAlert}
+  onDidDismiss={() => handleAlert(false, "", "")}
+  header={alertHeader}
+  message={alertMessage}
+  buttons={["Ok"]}
+/>
+```
+
+**Used for:**
+- Login/registration feedback
+- Operation success/failure
+- Validation errors
+- Confirmations
+
+## Styling Approach
+
+### Component-Level CSS
+
+Each component has its own CSS file:
+
+```
+Header/
+├── Header.jsx
+└── Header.css
+
+SideMenu/
+├── SideMenu.jsx
+└── SideMenu.css
+```
+
+### Theme Variables
+
+Global theme variables in `src/theme/variables.css`:
+
+```css
+.theme-dark {
+  --ion-background-color: #1a1a1a;
+  --ion-text-color: #ffffff;
+  /* ... */
+}
+
+.theme-light {
+  --ion-background-color: #ffffff;
+  --ion-text-color: #000000;
+  /* ... */
+}
+```
+
+### Ionic CSS Utilities
+
+Leverage Ionic's built-in CSS:
+
+```jsx
+import '@ionic/react/css/core.css';
+```
+
+## Responsive Design
+
+### Ionic Grid System
+
+```jsx
+<IonGrid>
+  <IonRow>
+    <IonCol size="12" sizeMd="6">
+      {/* Content */}
+    </IonCol>
+  </IonRow>
+</IonGrid>
+```
+
+### Split Pane for Desktop
+
+```jsx
+<IonSplitPane contentId="main">
+  <IonMenu contentId='main'>
+    <SideMenu />
+  </IonMenu>
+  <IonRouterOutlet id="main">
+    {/* Routes */}
+  </IonRouterOutlet>
+</IonSplitPane>
+```
+
+Automatically shows sidebar on larger screens, hidden on mobile.
+
+## Component Best Practices
+
+### 1. Separation of Concerns
+
+- Components handle UI rendering
+- Hooks handle business logic
+- Services handle API communication
+- Contexts manage global state
+
+### 2. Reusability
+
+- Small, focused components
+- Props for customization
+- Generic implementations where possible
+
+### 3. Performance
+
+- useCallback for event handlers
+- Conditional rendering to avoid unnecessary work
+- Lazy loading where applicable
+
+### 4. Accessibility
+
+- Semantic HTML
+- Ionic's built-in accessibility features
+- Proper ARIA labels on custom components
+
+### 5. Error Handling
+
+- Try-catch in async operations
+- Fallback UI for error states
+- User-friendly error messages via alerts
+
+## Next Steps
+
+- Review [Frontend Architecture](/architecture/frontend) for state management details
+- Explore [Architecture Overview](/architecture/overview) for system design

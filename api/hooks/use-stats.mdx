@@ -1,0 +1,248 @@
+---
+title: 'useStats'
+description: 'Custom hook for retrieving health statistics within a date range'
+---
+
+## Overview
+
+The `useStats` hook provides functionality to retrieve aggregated health statistics for a user within a specified date range. This is useful for generating reports, charts, and analytics based on daily health records.
+
+## Hook Signature
+
+```javascript
+const { getStas } = useStats();
+```
+
+<Note>
+Note: The function is named `getStas` in the source code (likely a typo of "getStats").
+</Note>
+
+## Return Value
+
+The hook returns an object containing:
+
+### Functions
+
+#### `getStas`
+```javascript
+async (userId, fechaInicio, fechaFinal) => Promise<Object | string>
+```
+Retrieves health statistics for a user within a date range.
+
+**Parameters:**
+- `userId` (string/number): The ID of the user
+- `fechaInicio` (string): Start date for the statistics range (format depends on backend API)
+- `fechaFinal` (string): End date for the statistics range (format depends on backend API)
+
+**Returns:**
+- On success: Statistics data object containing aggregated health metrics
+- On error: Error message string
+
+## Usage Example
+
+```javascript
+import { useStats } from '../hooks/useStats';
+import { useContext, useEffect, useState } from 'react';
+import UserContext from '../contexts/UserContext';
+
+function HealthDashboard() {
+  const { getStas } = useStats();
+  const { user } = useContext(UserContext);
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const loadStats = async (startDate, endDate) => {
+    setLoading(true);
+    setError(null);
+    
+    const result = await getStas(user.id, startDate, endDate);
+    
+    if (typeof result === 'object') {
+      setStats(result);
+    } else {
+      setError(result);
+    }
+    
+    setLoading(false);
+  };
+
+  // Load stats for the last 30 days
+  useEffect(() => {
+    const endDate = new Date().toISOString().split('T')[0];
+    const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split('T')[0];
+    
+    loadStats(startDate, endDate);
+  }, [user.id]);
+
+  if (loading) return <div>Loading statistics...</div>;
+  if (error) return <div>Error: {error}</div>;
+
+  return (
+    <div>
+      <h2>Health Statistics</h2>
+      {stats && (
+        <div>
+          {/* Display statistics data */}
+          <pre>{JSON.stringify(stats, null, 2)}</pre>
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+## Date Range Filter Example
+
+```javascript
+import { useStats } from '../hooks/useStats';
+import { useState } from 'react';
+
+function StatsDateRangeFilter({ userId }) {
+  const { getStas } = useStats();
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [stats, setStats] = useState(null);
+
+  const handleFetchStats = async () => {
+    if (!startDate || !endDate) {
+      alert('Please select both start and end dates');
+      return;
+    }
+
+    const result = await getStas(userId, startDate, endDate);
+    
+    if (typeof result === 'object') {
+      setStats(result);
+    } else {
+      alert(`Error: ${result}`);
+    }
+  };
+
+  return (
+    <div>
+      <input
+        type="date"
+        value={startDate}
+        onChange={(e) => setStartDate(e.target.value)}
+        placeholder="Start Date"
+      />
+      <input
+        type="date"
+        value={endDate}
+        onChange={(e) => setEndDate(e.target.value)}
+        placeholder="End Date"
+      />
+      <button onClick={handleFetchStats}>Get Statistics</button>
+      
+      {stats && (
+        <div className="stats-display">
+          {/* Render statistics */}
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+## Chart Integration Example
+
+```javascript
+import { useStats } from '../hooks/useStats';
+import { useEffect, useState } from 'react';
+import Chart from './Chart'; // Your chart component
+
+function StatsChart({ userId, dateRange }) {
+  const { getStas } = useStats();
+  const [chartData, setChartData] = useState(null);
+
+  useEffect(() => {
+    const fetchStatsForChart = async () => {
+      const stats = await getStas(
+        userId,
+        dateRange.start,
+        dateRange.end
+      );
+      
+      if (typeof stats === 'object') {
+        // Transform stats data for chart
+        setChartData({
+          labels: stats.dates,
+          datasets: [
+            {
+              label: 'Mood Score',
+              data: stats.moodScores
+            },
+            {
+              label: 'Symptom Count',
+              data: stats.symptomCounts
+            }
+          ]
+        });
+      }
+    };
+
+    fetchStatsForChart();
+  }, [userId, dateRange, getStas]);
+
+  return chartData ? <Chart data={chartData} /> : <div>Loading...</div>;
+}
+```
+
+## Weekly Stats Example
+
+```javascript
+import { useStats } from '../hooks/useStats';
+
+function WeeklyStats({ userId }) {
+  const { getStas } = useStats();
+  const [weeklyStats, setWeeklyStats] = useState(null);
+
+  const loadWeeklyStats = async () => {
+    const today = new Date();
+    const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+    
+    const fechaInicio = weekAgo.toISOString().split('T')[0];
+    const fechaFinal = today.toISOString().split('T')[0];
+    
+    const stats = await getStas(userId, fechaInicio, fechaFinal);
+    
+    if (typeof stats === 'object') {
+      setWeeklyStats(stats);
+    }
+  };
+
+  useEffect(() => {
+    loadWeeklyStats();
+  }, [userId]);
+
+  return (
+    <div>
+      <h3>This Week's Summary</h3>
+      {weeklyStats && (
+        <div>
+          {/* Display weekly statistics */}
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+## Dependencies
+
+This hook requires:
+- `statsService` for API calls:
+  - `getStatsService`: Fetch statistics for a user within a date range
+
+## Notes
+
+- The function uses `useCallback` for optimization
+- Date format should match the backend API requirements (typically ISO 8601: YYYY-MM-DD)
+- Returns simplified response: data object on success or error message string on failure
+- Does not maintain internal state - components should manage loading and error states
+- The function name `getStas` appears to be a typo but matches the source implementation
+- Useful for generating dashboards, reports, and data visualizations
+- Can be combined with charting libraries to display trends over time

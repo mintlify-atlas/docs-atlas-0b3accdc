@@ -1,0 +1,195 @@
+---
+title: ChatContext
+description: Manages the currently selected chat conversation with localStorage persistence
+---
+
+## Overview
+
+The `ChatContext` provides centralized state management for the currently active chat conversation in the CicloVital application. It automatically persists the selected chat to localStorage for continuity across sessions.
+
+## Context Shape
+
+```typescript
+interface ChatContextValue {
+  currentChat: Chat | null;
+  setCurrentChat: (chat: Chat | null) => void;
+}
+```
+
+### Properties
+
+<ParamField path="currentChat" type="Chat | null">
+  The currently selected chat conversation object, or `null` if no chat is selected.
+</ParamField>
+
+<ParamField path="setCurrentChat" type="function">
+  Function to update the current chat. Pass `null` to deselect.
+  
+  ```typescript
+  (chat: Chat | null) => void
+  ```
+</ParamField>
+
+## Provider Component
+
+### ChatProvider
+
+Wraps your application to provide chat context to all child components.
+
+```jsx
+import ChatProvider from './contexts/ChatProvider';
+
+function App() {
+  return (
+    <ChatProvider>
+      {/* Your app components */}
+    </ChatProvider>
+  );
+}
+```
+
+### Features
+
+- **Automatic Persistence**: Current chat is automatically saved to localStorage
+- **Session Recovery**: Loads the last selected chat from localStorage on initialization
+- **Safe Storage**: Includes error handling for localStorage operations
+- **Deselection Support**: Removes data from localStorage when chat is set to `null`
+
+## Usage
+
+### Consuming the Context
+
+```jsx
+import { useContext } from 'react';
+import ChatContext from './contexts/ChatContext';
+
+function ChatWindow() {
+  const { currentChat, setCurrentChat } = useContext(ChatContext);
+
+  if (!currentChat) {
+    return <p>Select a chat to start messaging</p>;
+  }
+
+  return (
+    <div>
+      <h2>Chat with {currentChat.participantName}</h2>
+      <MessageList messages={currentChat.messages} />
+    </div>
+  );
+}
+```
+
+### Selecting a Chat
+
+```jsx
+function ChatList({ chats }) {
+  const { setCurrentChat } = useContext(ChatContext);
+
+  const handleChatSelect = (chat) => {
+    setCurrentChat(chat);
+  };
+
+  return (
+    <ul>
+      {chats.map(chat => (
+        <li key={chat.id} onClick={() => handleChatSelect(chat)}>
+          {chat.participantName}
+        </li>
+      ))}
+    </ul>
+  );
+}
+```
+
+### Clearing the Selected Chat
+
+```jsx
+function ChatHeader() {
+  const { currentChat, setCurrentChat } = useContext(ChatContext);
+
+  const handleClose = () => {
+    setCurrentChat(null);
+  };
+
+  return (
+    <div>
+      <h3>{currentChat?.participantName}</h3>
+      <button onClick={handleClose}>Close Chat</button>
+    </div>
+  );
+}
+```
+
+### Checking if a Chat is Active
+
+```jsx
+function ChatListItem({ chat }) {
+  const { currentChat } = useContext(ChatContext);
+  
+  const isActive = currentChat?.id === chat.id;
+
+  return (
+    <div className={isActive ? 'active' : ''}>
+      {chat.participantName}
+    </div>
+  );
+}
+```
+
+## Implementation Details
+
+### Source Files
+
+- `src/contexts/ChatContext.js` - Context definition
+- `src/contexts/ChatProvider.jsx` - Provider implementation
+
+### localStorage Key
+
+The context stores chat data under the key `"chat"` in localStorage.
+
+### Initial State
+
+On mount, the provider attempts to load the current chat from localStorage. If no data exists or parsing fails, it defaults to `null`.
+
+```javascript
+const [currentChat, setCurrentChat] = useState(() => safeGet("chat", null));
+```
+
+## Best Practices
+
+<Tip>
+Use optional chaining (`currentChat?.property`) when accessing chat properties to safely handle the `null` state.
+</Tip>
+
+<Note>
+The entire chat object is persisted to localStorage. For large chat histories, consider storing only the chat ID and fetching full details from a server.
+</Note>
+
+## Common Patterns
+
+### Auto-selecting First Chat
+
+```jsx
+function ChatApp() {
+  const { currentChat, setCurrentChat } = useContext(ChatContext);
+  const [chats, setChats] = useState([]);
+
+  useEffect(() => {
+    // Load chats from API
+    loadChats().then(loadedChats => {
+      setChats(loadedChats);
+      // Auto-select first chat if none is selected
+      if (!currentChat && loadedChats.length > 0) {
+        setCurrentChat(loadedChats[0]);
+      }
+    });
+  }, []);
+
+  return <ChatInterface />;
+}
+```
+
+## Related
+
+- [UserContext](/api/contexts/user-context) - Manages user authentication
+- [ThemeContext](/api/contexts/theme-context) - Manages theme preferences

@@ -1,0 +1,147 @@
+---
+title: UserContext
+description: Manages user authentication state across the application with localStorage persistence
+---
+
+## Overview
+
+The `UserContext` provides centralized user authentication state management for the CicloVital application. It maintains the current user's data and automatically persists it to localStorage for session continuity.
+
+## Context Shape
+
+```typescript
+interface UserContextValue {
+  user: User | null;
+  setUser: (user: User | null) => void;
+}
+```
+
+### Properties
+
+<ParamField path="user" type="User | null">
+  The current authenticated user object, or `null` if no user is logged in.
+</ParamField>
+
+<ParamField path="setUser" type="function">
+  Function to update the current user. Pass `null` to log out.
+  
+  ```typescript
+  (user: User | null) => void
+  ```
+</ParamField>
+
+## Provider Component
+
+### UserProvider
+
+Wraps your application to provide user context to all child components.
+
+```jsx
+import UserProvider from './contexts/UserProvider';
+
+function App() {
+  return (
+    <UserProvider>
+      {/* Your app components */}
+    </UserProvider>
+  );
+}
+```
+
+### Features
+
+- **Automatic Persistence**: User data is automatically saved to localStorage
+- **Session Recovery**: Loads user data from localStorage on initialization
+- **Safe Storage**: Includes error handling for localStorage operations
+- **Logout Support**: Removes data from localStorage when user is set to `null`
+
+## Usage
+
+### Consuming the Context
+
+```jsx
+import { useContext } from 'react';
+import UserContext from './contexts/UserContext';
+
+function UserProfile() {
+  const { user, setUser } = useContext(UserContext);
+
+  if (!user) {
+    return <p>Please log in</p>;
+  }
+
+  return (
+    <div>
+      <h2>Welcome, {user.name}</h2>
+      <p>Email: {user.email}</p>
+    </div>
+  );
+}
+```
+
+### Setting User Data (Login)
+
+```jsx
+function LoginComponent() {
+  const { setUser } = useContext(UserContext);
+
+  const handleLogin = async (credentials) => {
+    const userData = await loginAPI(credentials);
+    setUser(userData);
+  };
+
+  return (
+    <button onClick={() => handleLogin({ email, password })}>
+      Login
+    </button>
+  );
+}
+```
+
+### Logging Out
+
+```jsx
+function LogoutButton() {
+  const { setUser } = useContext(UserContext);
+
+  const handleLogout = () => {
+    setUser(null);
+  };
+
+  return <button onClick={handleLogout}>Logout</button>;
+}
+```
+
+## Implementation Details
+
+### Source Files
+
+- `src/contexts/UserContext.js` - Context definition
+- `src/contexts/UserProvider.jsx` - Provider implementation
+
+### localStorage Key
+
+The context stores user data under the key `"user"` in localStorage.
+
+### Initial State
+
+On mount, the provider attempts to load user data from localStorage. If no data exists or parsing fails, it defaults to `null`.
+
+```javascript
+const [user, setUser] = useState(() => safeGet("user", null));
+```
+
+## Best Practices
+
+<Tip>
+Always check if `user` is not `null` before accessing user properties to avoid runtime errors.
+</Tip>
+
+<Warning>
+The user object is stored in plain text in localStorage. Do not store sensitive information like passwords or tokens directly in the user object.
+</Warning>
+
+## Related
+
+- [ChatContext](/api/contexts/chat-context) - Manages chat state
+- [ThemeContext](/api/contexts/theme-context) - Manages theme preferences

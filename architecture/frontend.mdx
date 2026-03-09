@@ -1,0 +1,539 @@
+---
+title: "Frontend Architecture"
+description: "Detailed frontend architecture, routing, state management, and patterns"
+---
+
+The CicloVital frontend is built with React and Ionic Framework, following modern patterns for state management, routing, and component composition.
+
+## Application Bootstrap
+
+### Entry Point
+
+The application initializes in `src/main.jsx:12` with a nested provider structure:
+
+```jsx
+import ReactDOM from 'react-dom/client';
+import App from './App';
+import { setupIonicReact } from '@ionic/react';
+import { ThemeProvider } from './contexts/ThemeProvider';
+import UserProvider from './contexts/UserProvider';
+
+import './theme/variables.css';
+import '@ionic/react/css/core.css';
+
+setupIonicReact();
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <ThemeProvider>
+    <UserProvider>
+      <App />
+    </UserProvider>
+  </ThemeProvider>
+);
+```
+
+**Provider Hierarchy:**
+1. **ThemeProvider** - Manages dark/light theme state
+2. **UserProvider** - Manages authenticated user state
+3. **App** - Root component with router
+4. **ChatProvider** - Manages current chat session (inside App)
+
+### Root Component
+
+The `App.jsx:8` component wraps the application with Ionic and routing infrastructure:
+
+```jsx
+import { IonApp } from '@ionic/react';
+import { IonReactRouter } from '@ionic/react-router';
+import AppContent from './AppContent';
+import ChatProvider from './contexts/ChatProvider';
+
+function App() {
+  return (
+    <IonApp>
+      <IonReactRouter>
+        <ChatProvider>
+          <AppContent/>
+        </ChatProvider>
+      </IonReactRouter>
+    </IonApp>
+  );
+}
+```
+
+## Routing Architecture
+
+### Route Configuration
+
+Routes are defined in `src/AppContent.jsx:12` using React Router DOM v5:
+
+```jsx
+import { IonMenu, IonRouterOutlet, IonSplitPane } from '@ionic/react';
+import { Route, Redirect } from 'react-router-dom';
+import Home from './pages/Home/Home';
+import SignUp from './pages/SignUp/SignUp';
+import Login from './pages/Login/Login';
+import Settings from './pages/Settings/Settings';
+import Chat from './pages/Chat/Chat';
+import statsDashboard from './pages/StatsDashboard/StatsDashboard';
+import SideMenu from './components/SideMenu/SideMenu';
+import { useLocation } from 'react-router-dom/cjs/react-router-dom';
+
+export const AppContent = () => {
+  const location = useLocation().pathname;
+
+  return (
+    <div> 
+      <IonSplitPane contentId="main">
+        {(location === '/chat' || location === '/statsDashboard') && (
+          <IonMenu className='sideMenu' contentId='main'>
+            <SideMenu />
+          </IonMenu>
+        )}
+        <IonRouterOutlet id="main">
+          <Route path="/home" component={Home} />
+          <Route path="/signup" component={SignUp} />
+          <Route path="/login" component={Login} />
+          <Route path="/settings" component={Settings} />
+          <Route path="/statsDashboard" component={statsDashboard} />
+          <Route path="/chat" component={Chat} />
+          <Redirect exact from="/" to="/home" />
+        </IonRouterOutlet>
+      </IonSplitPane>
+    </div>
+  );
+}
+```
+
+### Available Routes
+
+| Route | Component | Description | Auth Required |
+|-------|-----------|-------------|---------------|
+| `/` | - | Redirects to `/home` | No |
+| `/home` | Home | Landing page | No |
+| `/signup` | SignUp | User registration | No |
+| `/login` | Login | User authentication | No |
+| `/chat` | Chat | AI chat interface | Yes |
+| `/statsDashboard` | StatsDashboard | Analytics and charts | Yes |
+| `/settings` | Settings | User settings | Yes |
+
+### Conditional UI Elements
+
+The sidebar menu is conditionally rendered based on the current route:
+
+```jsx
+{(location === '/chat' || location === '/statsDashboard') && (
+  <IonMenu className='sideMenu' contentId='main'>
+    <SideMenu />
+  </IonMenu>
+)}
+```
+
+This pattern ensures the sidebar only appears on authenticated pages that need navigation.
+
+## State Management
+
+### Context API Pattern
+
+CicloVital uses React Context API for global state management with three main contexts:
+
+#### 1. UserContext - Authentication State
+
+Manages user authentication and profile data:
+
+```jsx
+// src/contexts/UserProvider.jsx:9
+const safeGet = (k, fallback) => {
+  try { 
+    return JSON.parse(localStorage.getItem(k)) ?? fallback; 
+  } catch { 
+    return fallback; 
+  }
+};
+
+const UserProvider = ({ children }) => {
+  const [user, setUser] = useState(() => safeGet("user", null));
+
+  // Persist user when changed (login/logout)
+  useEffect(() => {
+    try {
+      if (user === null) localStorage.removeItem("user");
+      else localStorage.setItem("user", JSON.stringify(user));
+    } catch {
+      // Silent fail
+    }
+  }, [user]);
+
+  return (
+    <UserContext.Provider value={{ user, setUser }}>
+      {children}
+    </UserContext.Provider>
+  );
+};
+```
+
+**Features:**
+- Initializes from localStorage for session persistence
+- Auto-persists changes to localStorage
+- Null state represents logged-out user
+
+#### 2. ThemeContext - Theme State
+
+Manages application theme (dark/light mode):
+
+```jsx
+// src/contexts/ThemeProvider.jsx:9
+export const ThemeProvider = ({ children }) => {
+  const [theme, setTheme] = useState(() => safeGet("theme", "theme-dark"));
+
+  // Apply theme to <body>
+  useEffect(() => {
+    document.body.className = theme;
+  }, [theme]);
+
+  // Persist theme
+  useEffect(() => {
+    try { 
+      localStorage.setItem("theme", JSON.stringify(theme)); 
+    } catch {
+      // Silent fail
+    }
+  }, [theme]);
+
+  return (
+    <ThemeContext.Provider value={{ theme, setTheme }}>
+      {children}
+    </ThemeContext.Provider>
+  );
+};
+```
+
+**Features:**
+- Defaults to dark theme
+- Applies theme via body className
+- Persists preference to localStorage
+
+#### 3. ChatContext - Chat Session State
+
+Manages the currently active chat:
+
+```jsx
+// src/contexts/ChatProvider.jsx:9
+const ChatProvider = ({ children }) => {
+  const [currentChat, setCurrentChat] = useState(() => safeGet("chat", null));
+
+  // Persist selected chat
+  useEffect(() => {
+    try {
+      if (currentChat === null) localStorage.removeItem("chat");
+      else localStorage.setItem("chat", JSON.stringify(currentChat));
+    } catch {
+      // Silent fail
+    }
+  }, [currentChat]);
+
+  return (
+    <ChatContext.Provider value={{ currentChat, setCurrentChat }}>
+      {children}
+    </ChatContext.Provider>
+  );
+};
+```
+
+**Features:**
+- Tracks active chat session
+- Persists across page refreshes
+- Null state means no chat selected
+
+### Context Usage Pattern
+
+Components consume contexts using the `useContext` hook:
+
+```jsx
+import { useContext } from 'react';
+import UserContext from '../../contexts/UserContext';
+
+const Header = () => {
+  const { user } = useContext(UserContext);
+  
+  return (
+    // Conditional rendering based on auth state
+    { user === null ? <LoginButton /> : <ChatButton /> }
+  );
+}
+```
+
+## Custom Hooks Pattern
+
+CicloVital extensively uses custom hooks to encapsulate business logic and side effects.
+
+### useAuth Hook
+
+Provides authentication operations (`src/hooks/useAuth.js:7`):
+
+```jsx
+export const useAuth = () => {
+  const history = useHistory();
+  const { user, setUser } = useContext(UserContext);
+  const [, setLocalStorageUser] = useLocalStorage('user', null);
+  const [showAlert, setShowAlert] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("");
+  const [alertHeader, setAlertHeader] = useState("");
+
+  const handleAlert = (show, message, header) => {
+    setShowAlert(show);
+    setAlertMessage(message);
+    setAlertHeader(header);
+  };
+
+  const registerUser = useCallback(async (data, resetFormCallback) => {
+    // Validation
+    if (data.password !== data.confirmPassword) {
+      handleAlert(true, "Las contraseñas no coinciden.", "Advertencia");
+      return;
+    }
+    
+    delete data.confirmPassword;
+    
+    try {
+      const createdUser = await createUser(data);
+      
+      if (createdUser.ok) {
+        const loginUserData = { correo: data.correo, password: data.password };
+        const registedUserData = await loginUser(loginUserData);
+        
+        if (registedUserData.ok) {
+          setLocalStorageUser(registedUserData.data);
+          setUser(registedUserData.data);
+          handleAlert(true, `Bienvenido ${registedUserData.data.nombre}`, "Usuario creado");
+          resetFormCallback?.();
+          history.push("/chat");
+        } else {
+          handleAlert(true, registedUserData.messageError, "Advertencia");
+        }
+      } else {
+        handleAlert(true, createdUser.messageError, "Advertencia");
+      }
+    } catch (error) {
+      console.error(`Mensaje de error: ${error}`);
+    }
+  }, [history, setUser, setLocalStorageUser]);
+
+  const login = useCallback(async (logindata, resetFormCallback) => {
+    try {
+      const registedUserData = await loginUser(logindata);
+
+      if (registedUserData.ok) {
+        setUser(registedUserData.data);
+        setLocalStorageUser(registedUserData.data);
+        handleAlert(true, `Bienvenido ${registedUserData.data.nombre}`, "Sesión iniciada");
+        resetFormCallback?.();
+        history.push("/chat");
+      } else {
+        handleAlert(true, registedUserData.messageError, "Advertencia");
+      }
+    } catch (error) {
+      console.error(`Mensaje de error: ${error}`);
+    }
+  }, [history, setUser, setLocalStorageUser]);
+
+  const logout = () => {
+    history.push('/home');
+    setUser(null);
+    setLocalStorageUser(null);
+  }
+  
+  return {
+    registerUser,
+    login,
+    logout,
+    showAlert,
+    alertMessage,
+    alertHeader,
+    handleAlert
+  }
+}
+```
+
+**Key features:**
+- Encapsulates all auth logic (register, login, logout)
+- Manages alert state for user feedback
+- Handles routing after auth operations
+- Uses useCallback for performance optimization
+- Integrates with UserContext and localStorage
+
+### useChat Hook
+
+Manages chat operations (`src/hooks/useChat.js:5`):
+
+```jsx
+export const useChat = () => {
+  const [, setChat] = useLocalStorage("chat", null);
+
+  const chatsList = useCallback(async (user) => {
+    const chats = await getChatsById(user.id);
+    if (chats.ok) {
+      return chats.data;
+    } else {
+      return chats.messageError;
+    }
+  }, []);
+
+  const newChat = useCallback(async (chat) => {
+    const newChatResult = await creatChat(chat);
+    if (newChatResult.ok) {
+      setChat(newChatResult.data);
+      return newChatResult.data;
+    } else {
+      return newChatResult.messageError;
+    }
+  }, [setChat]);
+
+  const deleteChat = useCallback(async (id) => {
+    const chatDeleted = await deletechat(id);
+    if (chatDeleted.ok) {
+      return 'Chat eliminado';
+    } else {
+      return chatDeleted.messageError;
+    }
+  }, []);
+
+  return {
+    chatsList,
+    newChat,
+    deleteChat
+  };
+};
+```
+
+**Provides:**
+- `chatsList()` - Fetch all user chats
+- `newChat()` - Create new chat session
+- `deleteChat()` - Remove chat session
+
+### Other Custom Hooks
+
+- **useLocalStorage** - Abstraction for localStorage operations
+- **useDailyRecord** - Daily wellness record CRUD operations
+- **useMessage** - Chat message operations
+- **useStats** - Statistics and analytics data fetching
+
+## Service Layer
+
+The service layer (`src/services/`) handles all API communication:
+
+### Service Pattern
+
+```javascript
+// src/services/authService.js:1
+import axios from "axios";
+
+const isProd = import.meta.env.VITE_PROD === 'true';
+const API_URL = isProd 
+  ? `${import.meta.env.VITE_URL_API_USER}` 
+  : `${import.meta.env.VITE_URL_API_LOCAL_USER}`;
+
+const errorService = 'Error al conectar con el servidor.';
+
+export const createUser = async (userData) => {
+  try {
+    const response = await axios.post(API_URL, userData);
+    return { ok: true, data: response.data };
+  } catch (error) {
+    const messageError = error.response?.data || errorService;
+    return { ok: false, messageError }
+  }
+}
+
+export const loginUser = async (userData) => {
+  try {
+    const response = await axios.post(API_URL + '/login', userData);
+    return { ok: true, data: response.data }
+  } catch (error) {
+    const messageError = error.response?.data || errorService;
+    return { ok: false, messageError }
+  }
+}
+```
+
+**Service Pattern Features:**
+- Environment-aware API URLs
+- Consistent response format: `{ ok: boolean, data?: any, messageError?: string }`
+- Centralized error handling
+- Axios for HTTP requests
+
+### Available Services
+
+- **authService.js** - User registration and authentication
+- **chatService.js** - Chat session management
+- **messageService.js** - Chat message operations
+- **dailyRecordService.js** - Wellness record CRUD
+- **statsService.js** - Analytics data retrieval
+
+## Navigation Patterns
+
+### Programmatic Navigation
+
+Uses React Router's `useHistory` hook:
+
+```jsx
+import { useHistory } from 'react-router-dom';
+
+const MyComponent = () => {
+  const history = useHistory();
+  
+  const navigateToChat = () => {
+    history.push('/chat');
+  };
+  
+  return <button onClick={navigateToChat}>Go to Chat</button>;
+}
+```
+
+### Ionic Router Link
+
+For declarative navigation with Ionic components:
+
+```jsx
+import { IonRouterLink } from '@ionic/react';
+
+<IonRouterLink color='light' routerLink='/home'>
+  CicloVital
+</IonRouterLink>
+```
+
+## Performance Optimizations
+
+### useCallback for Event Handlers
+
+All hook methods use `useCallback` to prevent unnecessary re-renders:
+
+```jsx
+const login = useCallback(async (logindata, resetFormCallback) => {
+  // Login logic
+}, [history, setUser, setLocalStorageUser]);
+```
+
+### Lazy Initialization
+
+Context providers use lazy initialization for localStorage:
+
+```jsx
+const [user, setUser] = useState(() => safeGet("user", null));
+```
+
+This ensures localStorage is only read once during initial render.
+
+### Conditional Rendering
+
+Conditional rendering based on auth state prevents loading protected content:
+
+```jsx
+{ user === null && <PublicContent /> }
+{ user !== null && <ProtectedContent /> }
+```
+
+## Next Steps
+
+- Explore [Component Architecture](/architecture/components) for UI patterns
+- Review [Architecture Overview](/architecture/overview) for system design

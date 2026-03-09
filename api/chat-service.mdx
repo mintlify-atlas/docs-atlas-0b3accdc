@@ -1,0 +1,209 @@
+---
+title: 'Chat Service'
+description: 'Chat management and conversation service'
+---
+
+## Overview
+
+The Chat Service manages chat conversations in the CicloVital application. It provides functionality to retrieve user chats, create new conversations, and delete existing chats.
+
+## API Configuration
+
+The service uses environment-based API URL configuration:
+
+```javascript
+const isProd = import.meta.env.VITE_PROD === 'true';
+const API_URL = isProd 
+  ? import.meta.env.VITE_URL_API_CHAT 
+  : import.meta.env.VITE_URL_API_LOCAL_CHAT;
+```
+
+## Functions
+
+### getChatsById
+
+Retrieves a summary of all chats for a specific user.
+
+```javascript
+export const getChatsById = async (userId) => {
+  // Implementation
+}
+```
+
+<ParamField path="userId" type="string" required>
+  The unique identifier of the user whose chats to retrieve
+</ParamField>
+
+<ResponseField name="response" type="object">
+  Response object with chat data
+  
+  **Success Response:**
+  ```javascript
+  {
+    ok: true,
+    data: response.data // Array of chat summaries
+  }
+  ```
+  
+  **Error Response:**
+  ```javascript
+  {
+    ok: false,
+    messageError: string // Error message from server or default error
+  }
+  ```
+</ResponseField>
+
+**HTTP Method:** `GET`  
+**Endpoint:** `{API_URL}/usuario/{userId}/resumen`
+
+#### Example Usage
+
+```javascript
+import { getChatsById } from '@/services/chatService';
+
+const userId = 'user123';
+const result = await getChatsById(userId);
+
+if (result.ok) {
+  console.log('User chats:', result.data);
+  result.data.forEach(chat => {
+    console.log(`Chat ID: ${chat.id}, Title: ${chat.title}`);
+  });
+} else {
+  console.error('Error fetching chats:', result.messageError);
+}
+```
+
+---
+
+### creatChat
+
+Creates a new chat conversation.
+
+```javascript
+export const creatChat = async (chat) => {
+  // Implementation
+}
+```
+
+<ParamField path="chat" type="object" required>
+  Chat data for the new conversation
+  
+  **Structure:**
+  - Chat metadata and initial settings
+  - User ID and conversation details
+</ParamField>
+
+<ResponseField name="response" type="object">
+  Response object with created chat data
+  
+  **Success Response:**
+  ```javascript
+  {
+    ok: true,
+    data: response.data // Created chat object with ID
+  }
+  ```
+  
+  **Error Response:**
+  ```javascript
+  {
+    ok: false,
+    messageError: string // Error message from server or default error
+  }
+  ```
+</ResponseField>
+
+**HTTP Method:** `POST`  
+**Endpoint:** `{API_URL}`
+
+#### Example Usage
+
+```javascript
+import { creatChat } from '@/services/chatService';
+
+const newChat = {
+  userId: 'user123',
+  title: 'New Conversation',
+  metadata: {
+    createdAt: new Date().toISOString()
+  }
+};
+
+const result = await creatChat(newChat);
+
+if (result.ok) {
+  console.log('Chat created:', result.data);
+  const chatId = result.data.id;
+} else {
+  console.error('Error creating chat:', result.messageError);
+}
+```
+
+---
+
+### deletechat
+
+Deletes a specific chat conversation.
+
+```javascript
+export const deletechat = async (id) => {
+  // Implementation
+}
+```
+
+<ParamField path="id" type="string" required>
+  The unique identifier of the chat to delete
+</ParamField>
+
+<ResponseField name="response" type="object">
+  Response object with deletion status
+  
+  **Success Response:**
+  ```javascript
+  {
+    ok: true,
+    data: response.data // Confirmation message
+  }
+  ```
+  
+  **Error Response:**
+  ```javascript
+  {
+    ok: false,
+    messageError: string // Error message from server or default error
+  }
+  ```
+</ResponseField>
+
+**HTTP Method:** `DELETE`  
+**Endpoint:** `{API_URL}/eliminar/{id}`
+
+#### Example Usage
+
+```javascript
+import { deletechat } from '@/services/chatService';
+
+const chatId = 'chat456';
+const result = await deletechat(chatId);
+
+if (result.ok) {
+  console.log('Chat deleted successfully:', result.data);
+} else {
+  console.error('Error deleting chat:', result.messageError);
+}
+```
+
+## Error Handling
+
+All service methods use a consistent error handling pattern:
+
+- **Server Errors:** Returns `error.response?.data` if available
+- **Connection Errors:** Returns default message: `'Error al conectar con el servidor.'`
+- **Response Format:** Always returns `{ ok: boolean, data/messageError }`
+- **Debug Logging:** Errors are logged to console for debugging
+
+## Source Code
+
+Location: `src/services/chatService.js`

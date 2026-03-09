@@ -1,0 +1,465 @@
+---
+title: 'Authentication'
+description: 'Complete authentication system documentation including user registration, login flows, and session management'
+---
+
+## Overview
+
+CicloVital uses a token-based authentication system with localStorage for session persistence. The authentication layer is built on three key components:
+
+- **authService** - API communication layer (src/services/authService.js)
+- **useAuth hook** - Authentication logic and state management (src/hooks/useAuth.js)
+- **UserContext** - Global user state across the application (src/contexts/UserContext.js)
+
+## Authentication Service
+
+The `authService` handles all HTTP requests to the authentication API using Axios.
+
+### API Configuration
+
+```javascript src/services/authService.js
+import axios from "axios";
+
+const isProd = import.meta.env.VITE_PROD === 'true';
+
+const API_URL = isProd 
+  ? `${import.meta.env.VITE_URL_API_USER}` 
+  : `${import.meta.env.VITE_URL_API_LOCAL_USER}`;
+```
+
+The service automatically switches between development and production API endpoints based on the `VITE_PROD` environment variable.
+
+### User Registration
+
+Creates a new user account and returns the created user data.
+
+```javascript src/services/authService.js
+export const createUser = async (userData) => {
+  try {
+    const response = await axios.post(API_URL, userData);
+    return { ok: true, data: response.data };
+  } catch(error) {
+    const messageError = error.response?.data || 'Error al conectar con el servidor.';
+    return { ok: false, messageError }
+  }
+}
+```
+
+**Request Payload:**
+```json
+{
+  "nombre": "John Doe",
+  "edad": 28,
+  "correo": "john@example.com",
+  "password": "securepass123"
+}
+```
+
+**Response:**
+```json
+{
+  "ok": true,
+  "data": {
+    "id": 1,
+    "nombre": "John Doe",
+    "edad": 28,
+    "correo": "john@example.com"
+  }
+}
+```
+
+### User Login
+
+Authenticates user credentials and returns user session data.
+
+```javascript src/services/authService.js
+export const loginUser = async (userData) => {
+  try {
+    const response = await axios.post(API_URL + '/login', userData);
+    return { ok: true, data: response.data }
+  } catch(error) {
+    const messageError = error.response?.data || 'Error al conectar con el servidor.';
+    return { ok: false, messageError }
+  }
+}
+```
+
+**Request Payload:**
+```json
+{
+  "correo": "john@example.com",
+  "password": "securepass123"
+}
+```
+
+<Note>
+  Both `createUser` and `loginUser` return a consistent response format with `ok` status and either `data` or `messageError`.
+</Note>
+
+## useAuth Hook
+
+The `useAuth` hook provides authentication methods and state management throughout the application.
+
+### Import and Usage
+
+```javascript
+import { useAuth } from './hooks/useAuth';
+
+const LoginComponent = () => {
+  const { login, logout, showAlert, alertMessage, alertHeader } = useAuth();
+  
+  // Use authentication methods
+};
+```
+
+### Registration Flow
+
+The `registerUser` method handles the complete registration process:
+
+<Steps>
+  <Step title="Password Validation">
+    ```javascript src/hooks/useAuth.js:33-36
+    if (data.password !== data.confirmPassword) {
+      handleAlert(true, "Las contraseñas no coinciden.", "Advertencia");
+      return;
+    }
+    ```
+  </Step>
+
+  <Step title="Create User Account">
+    ```javascript src/hooks/useAuth.js:41
+    const createdUser = await createUser(data);
+    ```
+  </Step>
+
+  <Step title="Auto-Login After Registration">
+    ```javascript src/hooks/useAuth.js:45-48
+    const loginUserData = { 
+      correo: data.correo, 
+      password: data.password 
+    };
+    const registedUserData = await loginUser(loginUserData);
+    ```
+  </Step>
+
+  <Step title="Store Session & Redirect">
+    ```javascript src/hooks/useAuth.js:52-56
+    setLocalStorageUser(registedUserData.data);
+    setUser(registedUserData.data);
+    handleAlert(true, `Bienvenido ${registedUserData.data.nombre}`, "Usuario creado");
+    history.push("/chat");
+    ```
+  </Step>
+</Steps>
+
+### Login Flow
+
+The `login` method authenticates users and manages session state:
+
+```javascript src/hooks/useAuth.js:71-87
+const login = useCallback(async (logindata, resetFormCallback) => {
+  try {
+    const registedUserData = await loginUser(logindata);
+
+    if (registedUserData.ok) {
+      setUser(registedUserData.data);
+      setLocalStorageUser(registedUserData.data);
+      handleAlert(true, `Bienvenido ${registedUserData.data.nombre}`, "Sesión iniciada");
+      resetFormCallback?.();
+      history.push("/chat");
+    } else {
+      handleAlert(true, registedUserData.messageError, "Advertencia");
+    }
+  } catch (error) {
+    console.error(`Mensaje de error: ${error}`);
+  }
+}, [history, setUser, setLocalStorageUser]);
+```
+
+### Logout Flow
+
+The `logout` method clears the user session:
+
+```javascript src/hooks/useAuth.js:90-94
+const logout = () => {
+  history.push('/home');
+  setUser(null);
+  setLocalStorageUser(null);
+}
+```
+
+<Warning>
+  Logout clears both the global UserContext state and localStorage, ensuring complete session termination.
+</Warning>
+
+### Hook Return Values
+
+```javascript src/hooks/useAuth.js:97-105
+return {
+  registerUser,   // Registration method
+  login,          // Login method
+  logout,         // Logout method
+  showAlert,      // Alert visibility state
+  alertMessage,   // Alert message content
+  alertHeader,    // Alert header text
+  handleAlert     // Alert control function
+}
+```
+
+## User Context
+
+The `UserContext` provides global user state management across the application.
+
+### Context Definition
+
+```javascript src/contexts/UserContext.js
+import { createContext } from "react";
+
+const UserContext = createContext({
+  user: null,
+  setUser: () => {},
+});
+
+export default UserContext;
+```
+
+### User Provider Implementation
+
+```javascript src/contexts/UserProvider.jsx
+import { useState, useEffect } from "react";
+import UserContext from "./UserContext";
+
+const safeGet = (k, fallback) => {
+  try { 
+    return JSON.parse(localStorage.getItem(k)) ?? fallback; 
+  } catch { 
+    return fallback; 
+  }
+};
+
+const UserProvider = ({ children }) => {
+  const [user, setUser] = useState(() => safeGet("user", null));
+
+  // Persist user when it changes (login/logout)
+  useEffect(() => {
+    try {
+      if (user === null) localStorage.removeItem("user");
+      else localStorage.setItem("user", JSON.stringify(user));
+    } catch {
+      // Handle storage errors silently
+    }
+  }, [user]);
+
+  return (
+    <UserContext.Provider value={{ user, setUser }}>
+      {children}
+    </UserContext.Provider>
+  );
+};
+```
+
+### Using the Context
+
+```javascript
+import { useContext } from 'react';
+import UserContext from './contexts/UserContext';
+
+const MyComponent = () => {
+  const { user, setUser } = useContext(UserContext);
+  
+  if (!user) {
+    return <div>Please log in</div>;
+  }
+  
+  return <div>Welcome, {user.nombre}!</div>;
+};
+```
+
+## Session Persistence
+
+CicloVital uses the `useLocalStorage` hook for persistent session management.
+
+### Implementation
+
+```javascript src/hooks/useLocalStorage.js
+import { useEffect, useState } from 'react';
+
+export function useLocalStorage(key, initialValue) {
+  const [value, setValue] = useState(() => {
+    if (typeof window === 'undefined') return initialValue;
+    try {
+      const raw = window.localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : initialValue;
+    } catch {
+      return initialValue;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(key, JSON.stringify(value));
+    } catch { /* Storage quota full / private mode */ }
+  }, [key, value]);
+
+  return [value, setValue];
+}
+```
+
+### Key Features
+
+- **SSR Safe** - Checks for `window` object before accessing localStorage
+- **JSON Serialization** - Automatically serializes/deserializes data
+- **Error Handling** - Gracefully handles storage quota and private mode issues
+- **Auto-Sync** - Automatically saves to localStorage when value changes
+
+## Protected Routes
+
+The Chat component implements route protection:
+
+```javascript src/pages/Chat/Chat.jsx:27-32
+if (user === null) {
+  window.location.reload();
+  return <Home />;
+}
+```
+
+<Tip>
+  For more robust route protection, consider implementing a `PrivateRoute` component wrapper that checks authentication before rendering.
+</Tip>
+
+## Form Validation
+
+### Login Form Rules
+
+```javascript src/pages/Login/LoginForm/LoginForm.jsx
+{
+  correo: {
+    required: "El correo es obligatorio",
+    pattern: {
+      value: /^[^@]+@[^@]+\.[^@]+$/,
+      message: "Formato de email inválido"
+    },
+    maxLength: 254
+  },
+  password: {
+    required: "La contraseña es obligatoria",
+    minLength: { value: 8, message: "Mínimo 8 caracteres" },
+    maxLength: { value: 12, message: "Máximo 12 caracteres" }
+  }
+}
+```
+
+### Signup Form Rules
+
+```javascript src/pages/SignUp/SingUpForm/SignUpForm.jsx
+{
+  nombre: { 
+    required: "El nombre es obligatorio", 
+    minLength: 1, 
+    maxLength: 30 
+  },
+  edad: {
+    required: "La edad es obligatoria",
+    min: 0,
+    max: 120,
+    valueAsNumber: true
+  },
+  correo: {
+    required: "El correo es obligatorio",
+    pattern: {
+      value: /^[^@]+@[^@]+\.[^@]+$/,
+      message: "Formato de email inválido"
+    },
+    maxLength: 254
+  },
+  password: {
+    required: "La contraseña es obligatoria",
+    minLength: { value: 8, message: "Mínimo 8 caracteres" },
+    maxLength: { value: 12, message: "Máximo 12 caracteres" }
+  },
+  confirmPassword: {
+    required: "Debe confirmar la contraseña",
+    minLength: { value: 8, message: "Mínimo 8 caracteres" },
+    maxLength: { value: 12, message: "Máximo 12 caracteres" }
+  }
+}
+```
+
+## Error Handling
+
+All authentication operations include comprehensive error handling:
+
+```javascript
+try {
+  const response = await axios.post(API_URL, userData);
+  return { ok: true, data: response.data };
+} catch(error) {
+  const messageError = error.response?.data || 'Error al conectar con el servidor.';
+  return { ok: false, messageError }
+}
+```
+
+**Common Error Scenarios:**
+
+- **Network Errors** - Returns default "Error al conectar con el servidor" message
+- **Invalid Credentials** - Returns server error message from `error.response.data`
+- **Validation Errors** - Handled by React Hook Form before API call
+- **Storage Errors** - Silently caught in useLocalStorage
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Always validate passwords match before submission">
+    ```javascript
+    if (data.password !== data.confirmPassword) {
+      handleAlert(true, "Las contraseñas no coinciden.", "Advertencia");
+      return;
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Remove sensitive data before API calls">
+    ```javascript
+    // Remove confirmPassword before sending to API
+    delete data.confirmPassword;
+    const createdUser = await createUser(data);
+    ```
+  </Accordion>
+
+  <Accordion title="Use consistent response formats">
+    ```javascript
+    // All service methods return { ok, data } or { ok, messageError }
+    return { ok: true, data: response.data };
+    return { ok: false, messageError };
+    ```
+  </Accordion>
+
+  <Accordion title="Implement proper loading states">
+    ```javascript
+    const [isLoading, setIsLoading] = useState(false);
+    
+    const handleLogin = async (data) => {
+      setIsLoading(true);
+      await login(data);
+      setIsLoading(false);
+    };
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Configuration" icon="gear" href="/getting-started/configuration">
+    Learn about environment variables and API configuration
+  </Card>
+  <Card title="User Context API" icon="users" href="/api/contexts/user-context">
+    Explore the full UserContext API reference
+  </Card>
+  <Card title="useAuth Hook" icon="code" href="/api/hooks/use-auth">
+    Deep dive into the useAuth hook documentation
+  </Card>
+  <Card title="Auth Service" icon="server" href="/api/auth-service">
+    View complete authService API documentation
+  </Card>
+</CardGroup>
