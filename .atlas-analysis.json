@@ -1,0 +1,118 @@
+{
+  "projectType": "saas",
+  "projectName": "CicloVital",
+  "projectDescription": "A digital platform for emotional wellbeing and mental health tracking with AI-powered chat support and habit analytics.",
+  "theme": "almond",
+  "primaryColor": "#f1d262",
+  "lightColor": "#7c6c34",
+  "darkColor": "#19160b",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "introduction",
+              "features"
+            ]
+          },
+          {
+            "group": "Getting Started",
+            "pages": [
+              "getting-started/quickstart",
+              "getting-started/authentication",
+              "getting-started/configuration"
+            ]
+          },
+          {
+            "group": "Core Features",
+            "pages": [
+              "features/ai-chatbot",
+              "features/daily-records",
+              "features/calendar",
+              "features/statistics"
+            ]
+          },
+          {
+            "group": "Mobile App",
+            "pages": [
+              "mobile/android-setup",
+              "mobile/capacitor-configuration"
+            ]
+          },
+          {
+            "group": "Architecture",
+            "pages": [
+              "architecture/overview",
+              "architecture/frontend",
+              "architecture/components"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Services",
+            "pages": [
+              "api/auth-service",
+              "api/chat-service",
+              "api/daily-record-service",
+              "api/message-service",
+              "api/stats-service"
+            ]
+          },
+          {
+            "group": "Hooks",
+            "pages": [
+              "api/hooks/use-auth",
+              "api/hooks/use-chat",
+              "api/hooks/use-daily-record",
+              "api/hooks/use-stats"
+            ]
+          },
+          {
+            "group": "Contexts",
+            "pages": [
+              "api/contexts/user-context",
+              "api/contexts/chat-context",
+              "api/contexts/theme-context"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "AI-powered chatbot for emotional support and mental health guidance",
+    "Daily habit tracking (sleep, exercise, energy, mood, motivation)",
+    "Interactive calendar for managing and viewing daily records",
+    "Statistics dashboard with data visualization and AI-generated insights",
+    "User authentication and personalized experience",
+    "Mobile app support via Ionic and Capacitor for Android"
+  ],
+  "publicApiSurface": [
+    "authService.createUser",
+    "authService.loginUser",
+    "chatService.getChatsById",
+    "chatService.creatChat",
+    "chatService.deletechat",
+    "dailyRecordService.getDailyRecordsByUserID",
+    "dailyRecordService.createDailyRecordService",
+    "dailyRecordService.deleteDailyRecordService",
+    "dailyRecordService.updateDailyRecordService",
+    "messageService.getMessagesById",
+    "messageService.createMessage",
+    "statsService.getStatsByUserIdAndDateRange",
+    "useAuth hook",
+    "useChat hook",
+    "useDailyRecord hook",
+    "useStats hook",
+    "UserContext",
+    "ChatContext",
+    "ThemeContext"
+  ]
+}
